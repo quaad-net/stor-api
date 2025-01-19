@@ -8,6 +8,12 @@ import { ObjectId } from "mongodb";
 const router = express.Router();
 
 // Submit inventory pick.
+router.get("/", async(req, res)=>{
+    await client.connect();
+    await client.close();
+    res.send("Connection to stor.quaad/api established successfully.")
+})
+
 router.post("/pick", async (req, res)=>{
     await client.connect();
     //fake submit

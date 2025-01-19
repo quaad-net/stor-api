@@ -7,13 +7,14 @@ import { ObjectId } from "mongodb";
 // The router will be added as a middleware and will take control of requests starting with path/api.
 const router = express.Router();
 
-// // Submit inventory pick.
-// router.get("/", async(req, res)=>{
-//     await client.connect();
-//     await client.close();
-//     res.send("Connection to stor.quaad/api established successfully.")
-// })
+// Test Connection.
+router.get("/", async(req, res)=>{
+    await client.connect();
+    await client.close();
+    res.send("Connection to stor.quaad/api established successfully.")
+})
 
+// Submit inventory pick.
 router.post("/pick", async (req, res)=>{
     await client.connect();
     //fake submit

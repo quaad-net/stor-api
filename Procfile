@@ -1,1 +1,1 @@
-web: node --env-file=.env server
+web: node server

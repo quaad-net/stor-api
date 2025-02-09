@@ -1,5 +1,6 @@
-import express, { json } from "express";
+import express, { json, Router } from "express";
 import {db, client} from "../db/connection.js";
+import pickNotif from "../email/notif.js"
 
 // This will help convert the id from string to ObjectId for the _id.
 import { ObjectId } from "mongodb";
@@ -9,18 +10,12 @@ const router = express.Router();
 
 // Test Connection.
 router.get("/", async(req, res)=>{
-    await client.connect();
-    await client.close();
-    res.send("Connection to stor.quaad/api established successfully.")
-})
-
-// Submit inventory pick.
-router.post("/pick", async (req, res)=>{
-    await client.connect();
-    //fake submit
-    const result = "Submitted successfully.";
-    await client.close();
-    res.send(result);
+    try{
+        await client.connect()
+        await client.close();
+        res.send("Connection to api.stor.quaad established successfully.")     
+    }
+    catch(err){console.error(err)};
 })
 
 // Get records of all technicians.
@@ -41,7 +36,8 @@ router.get("/technicians/:technicianId", async (req, res)=>{ //test id: 11112222
     res.json(result)
 })
 
-//////Boilerplate///////// 
+//////Guide///////// 
+
 // // This section will help you get a list of all the records.
 // router.get("/", async (req, res) => {
 //   let collection = await db.collection("records");

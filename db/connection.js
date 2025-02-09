@@ -1,4 +1,5 @@
 import { MongoClient, ServerApiVersion } from "mongodb";
+import "dotenv/config";
 
 const uri = process.env.ATLAS_URI || "";
 export const client = new MongoClient(uri, {
@@ -8,17 +9,5 @@ export const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
-
-// try {
-//   // Connect the client to the server
-//   await client.connect();
-//   // Send a ping to confirm a successful connection
-//   await client.db("admin").command({ ping: 1 });
-//   console.log(
-//    "Pinged your deployment. You successfully connected to MongoDB!"
-//   );
-// } catch(err) {
-//   console.error(err);
-// }
 
 export const  db = client.db("quaad");

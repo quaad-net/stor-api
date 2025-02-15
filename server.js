@@ -23,48 +23,65 @@ app.use(express.static('public'));
 
 app.set('view engine', 'ejs');
 
-// Submit inventory pick with email notification.
-app.post('/pick', async (req, res) => {
-  const parts = [...req.body];
-  const technicianInfo = parts[0].technicianInfo;
-  res.render('notif_template.ejs', {parts: parts, technicianInfo: technicianInfo}, (err, html) => {
-    const sendNotif = pickNotif(html.toString());
-    res.send(sendNotif.status);
-  });
-});
+
+////////////////////////////////////// POSTS ////////////////////////////////////////////
+
+// Test auth 
+app.post('/auth-endpoint', auth, (req, res)=>{
+  res.status(200).json(req.user);
+})
 
 app.post("/login", async(req, res)=>{
 
-  await client.connect();
-  const database = client.db('quaad');
-  const coll = database.collection('users');
-  const cursor = coll.find({email: req.body.email}, {});
-  const match = (await cursor.toArray());
-  const storedPass = match[0].password;
+  try{
+    await client.connect();
+    const database = client.db('quaad');
+    const coll = database.collection('users');
+    const cursor = coll.find({email: req.body.email}, {});
+    const match = (await cursor.toArray());
+    const storedPass = match[0].password;
 
-  const hash = createHmac('sha256', req.body.password)
-  .update('QuaCartoon1!')
-  .digest('hex')
+    const hash = createHmac('sha256', req.body.password)
+    .update('QuaCartoon1!')
+    .digest('hex')
 
-  if(hash == storedPass){
-    const token = jwt.sign(
-      {
-        userEmail: req.body.email.toLowerCase()
-      },
-      "RANDOM-TOKEN",
-      { expiresIn: "8h" }
-    )
-    res.status(200).send({
-      message: "Login Successful",
-      email: req.body.email.toLowerCase(),
-      token,
-    });
+    if(hash == storedPass){
+      const secretKey = process.env.SECRET_KEY;
+      const token = jwt.sign(
+        {
+          payload: req.body.email.toLowerCase(),
+        }, 
+        secretKey,
+        { expiresIn: "8h" , algorithm: 'HS256'}
+      )
+      res.status(200).send({
+        message: "Login Successful",
+        email: req.body.email.toLowerCase(),
+        token,
+      });
+    }
+    else{
+      res.status(404).json({message: 'Entries do not exist'});
+    }
   }
-  else{
-    res.status(400).send('Entries do not exist');
+  catch{
+    res.status(500).send('Login error')
   }
-
 })
+
+// Submit inventory pick with email notification.
+app.post('/pick', auth, async (req, res) => {
+  try{
+  const parts = [...req.body];
+  const technicianInfo = parts[0].technicianInfo;
+  res.render('notif_template.ejs', {parts: parts, technicianInfo: technicianInfo}, (err, html) => {
+    pickNotif(html).then(res.status(200).json({message: 'Submitted'}))
+  })
+  }
+  catch{
+    res.status(500).json({message: 'Failed to submit'})
+  }
+});
 
 // Register new user.
 app.post("/register", async (req, res) => {
@@ -86,6 +103,7 @@ app.post("/register", async (req, res) => {
         try{
           const emailInput = req.body.email.toLowerCase();
           coll = database.collection('authorized_accounts');
+          //Note: Authorized users will already have an email account in db.
           match = await coll.findOne({email: emailInput});
           if(match !==null){
             if(match.email== emailInput){
@@ -107,11 +125,11 @@ app.post("/register", async (req, res) => {
               .then(()=>{res.status(201).send('New user created')})
             }
             else{
-              res.status(400).send('Unauthorized account') //fallback that shouldn't occur
+              res.status(401).send('Unauthorized account') // Shouldn't occur here!
             }
           }
           else{
-            res.status(400).send('Unauthorized account')
+            res.status(401).send('Unauthorized account')
           }
         }
         catch{
@@ -126,10 +144,6 @@ app.post("/register", async (req, res) => {
       res.status(500).send('Something went wrong')
     }
 });
-
-app.post('/auth-endpoint', auth, (req, res)=>{
-  res.json({ message: "Authorized user" });
-})
 
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);

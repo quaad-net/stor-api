@@ -1,6 +1,5 @@
 import express, { json, Router } from "express";
 import {db, client} from "../db/connection.js";
-import pickNotif from "../email/notif.js"
 
 // This will help convert the id from string to ObjectId for the _id.
 import { ObjectId } from "mongodb";
@@ -11,8 +10,7 @@ const router = express.Router();
 // Test Connection.
 router.get("/", async(req, res)=>{
     try{
-        await client.connect()
-        await client.close();
+        await client.connect();
         res.send("Connection to api.stor.quaad established successfully.")     
     }
     catch(err){console.error(err)};
@@ -23,7 +21,6 @@ router.get("/technicians", async (req, res)=>{
     await client.connect();
     const coll = db.collection("stor_technicians");
     const result = await coll.find({}).toArray();
-    await client.close();
     res.json(result);
 })
 
@@ -32,9 +29,23 @@ router.get("/technicians/:technicianId", async (req, res)=>{ //test id: 11112222
     await client.connect();
     const coll = db.collection("stor_technicians");
     const result = await coll.findOne({ technicianId: req.params.technicianId}).toArray(); 
-    await client.close();
     res.json(result)
 })
+
+// Get record of quaad user.
+router.post("/users", async (req, res)=>{
+    try{
+        await client.connect();
+        const coll = db.collection("users");
+        const result = await coll.find({email: req.body.email}).project({password: 0, _id: 0}).toArray();
+        res.json(result);
+    }
+    catch(err){
+        res.status(500).json({message:"Error"})
+    }
+})
+
+export default router;
 
 //////Guide///////// 
 
@@ -108,5 +119,3 @@ router.get("/technicians/:technicianId", async (req, res)=>{ //test id: 11112222
 //     res.status(500).send("Error deleting record");
 //   }
 // });
-
-export default router;

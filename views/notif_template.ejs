@@ -1,25 +1,24 @@
 <html>
    <body>
-      <div class="header">
-         <h1 class="title">stor.quaad</h1>
-      </div>
-      <div class="null">&nbsp;</div>
-      <table style="width: 200px;">
+      <table style="width: 100%; background-color: #242424;">
          <thead>
                <tr>
-                  <th></th>
+                  <th><h1 class="title" style="text-align: left; padding-left: 5px;;">stor.quaad</h1></th>
                </tr>
          </thead>
          <tbody>
+               <tr class="null">
+                  <td>&nbsp;</td>
+               </tr>
                <span class="technician-info">
                   <tr>
-                     <td><strong>Technician Name:</strong> <%=technicianInfo.firstName%>&nbsp;<%=technicianInfo.lastName%></td>
+                     <td style="padding-left: 5px;"><strong>Technician Name:</strong> <%=technicianInfo.firstName%>&nbsp;<%=technicianInfo.lastName%></td>
                   </tr>
                   <tr>
-                     <td><strong>Trade:</strong> <%=technicianInfo.trade%></td>
+                     <td style="padding-left: 5px;"><strong>Trade:</strong> <%=technicianInfo.trade%></td>
                   </tr>
                   <tr>
-                     <td><strong>Date:</strong> <%=technicianInfo.date%></td>
+                     <td style="padding-left: 5px;"><strong>Date:</strong> <%=technicianInfo.date%></td>
                   </tr>
                </span>
                <tr class="null"><td>&nbsp;</td>
@@ -27,28 +26,28 @@
                <% parts.forEach((part)=>{%>
                <span class="part-details">
                   <tr>
-                     <td><strong>Part:</strong> <%=part.part%></td>
+                     <td style="padding-left: 5px;"><strong>Part:</strong> <%=part.part%></td>
                   </tr>
                   <tr>
-                     <td><strong>description:</strong> <%=part.description%></td>
+                     <td style="padding-left: 5px;"><strong>description:</strong> <%=part.description%></td>
                   </tr>
                   <tr>
-                     <td><strong>Qty:</strong> <%=part.qty%></td>
+                     <td style="padding-left: 5px;"><strong>Qty:</strong> <%=part.qty%></td>
                   </tr>
                   <tr>
-                     <td><strong>Unit:</strong> <%=part.unit%></td>
+                     <td style="padding-left: 5px;"><strong>Unit:</strong> <%=part.unit%></td>
                   </tr>
                   <tr>
-                     <td><strong>Warehouse:</strong> <%=part.warehouse%></td>
+                     <td style="padding-left: 5px;"><strong>Warehouse:</strong> <%=part.warehouse%></td>
                   </tr>
                   <tr>
-                     <td><strong>Workorder:</strong> <%=part.workorder%></td>
+                     <td style="padding-left: 5px;"><strong>Workorder:</strong> <%=part.workorder%></td>
                   </tr>
                   <tr>
-                     <td><strong>Reorder:</strong> <%=part.reorder%></td>
+                     <td style="padding-left: 5px;"><strong>Reorder:</strong> <%=part.reorder%></td>
                   </tr>
                   <tr>
-                     <td><strong>ReorderAmt:</strong> <%=part.reorderAmt%></td>
+                     <td style="padding-left: 5px;"><strong>ReorderAmt:</strong> <%=part.reorderAmt%></td>
                   </tr>
                   <tr class="null">
                      <td>&nbsp;</td>
@@ -61,10 +60,10 @@
                   <td>
                      <img src="https://imagedelivery.net/hvBzZjzDepIfNAvBsmlTgA/95db0fb7-976e-48eb-14e1-f36a74718400/public" 
                      alt="Quaad Logo" 
-                     style="width:70x; margin-left: 10px;"/>
+                     style="width:70x; margin-left: 15px;"/>
                   </td>
                </tr>
-               <tr><td><i>No reply to</br>uwm@quaad</i></td></tr>
+               <tr><td style="padding-left: 5px;"><i>No reply to</br>uwm@quaad</i></td></tr>
          </tbody>
       </table>
    </body>

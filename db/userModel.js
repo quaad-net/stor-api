@@ -6,7 +6,7 @@ const userSchema = new Schema({
         type: String,
         required: [true, "Please provide an Email!"],
         unique: [true, "Email Exist"],
-        lowercase: true
+        lowercase: true,
       },
     
       password: {
@@ -36,11 +36,12 @@ const userSchema = new Schema({
         lowercase: true
       },
 
-      employeeID: {
+      employeeID: { // "_" will be added to employeeID in DB.
         type: String,
         required: [true, "Please provide an employee ID!"],
         unique: false
       },
+
       createdAt: {
         type: Date,
         default: () => Date.now(),

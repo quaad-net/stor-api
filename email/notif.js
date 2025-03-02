@@ -12,5 +12,5 @@ export default async function pickNotif(html){
             Subject: "Inventory Pick",
             HtmlBody: html.toString(),
         }
-    ).then((response)=>{return response.status})
+    )
 }

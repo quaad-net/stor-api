@@ -1,38 +1,110 @@
 import express, { json, Router } from "express";
 import {db, client} from "../db/connection.js";
-
-// This will help convert the id from string to ObjectId for the _id.
+import auth from "../auth.js";
 import { ObjectId } from "mongodb";
 
-// The router will be added as a middleware and will take control of requests starting with path/api.
 const router = express.Router();
 
-// Test Connection.
-router.get("/", async(req, res)=>{
+// Test application.
+router.get("/", auth, async(req, res)=>{
     try{
         await client.connect();
         res.send("Connection to api.stor.quaad established successfully.")     
     }
-    catch(err){console.error(err)};
+    catch(err){
+        res.send("Unauthorized!")
+    };
 })
 
-// Get records of all technicians.
-router.get("/technicians", async (req, res)=>{
-    await client.connect();
-    const coll = db.collection("stor_technicians");
-    const result = await coll.find({}).toArray();
-    res.json(result);
+// Get part records for labels using warehouseBinLocation query.
+router.post("/labels/:query", auth, async (req, res)=>{
+    
+    try{
+        if(req.params.query == ""){throw new Error('Invalid query format')}
+        const queryStr = req.params.query.trim().toUpperCase();
+        const queryArr = [...queryStr];
+        const active = /&ACTIVE/ // Returns only active parts if present in query
+        const isActive = active.test(queryStr);
+        let colonCount = 0;
+        queryArr.map((str)=>{
+            if(str==':'){
+                colonCount += 1;
+            }
+        })
+        if(colonCount == 1){
+            const querySplit = queryStr.split(":");
+            const startQryAt = querySplit[0];
+            let endQryAt; 
+            if(isActive){endQryAt =  querySplit[1].replace('&ACTIVE', '').trim()}
+            else{ endQryAt = querySplit[1]}
+            await client.connect();
+            const coll = db.collection("uwm_stor_parts");
+            const result = await coll.find( { warehouseBinLocation: { $gte: startQryAt, $lte: endQryAt }, ...(isActive ? { active: 'True' } : {}) } )
+            .sort({warehouseBinLocation: 1, partCode: 1}).toArray();
+            res.json(result);
+        }
+        else{
+            if(colonCount == 0){
+                await client.connect();
+                const coll = db.collection("uwm_stor_parts");
+                const result = await coll.find( { warehouseBinLocation: queryStr, ...(isActive ? { active: 'True' } : {})} )
+                .sort({warehouseBinLocation: 1, partCode: 1}).toArray();
+                res.json(result);
+            }
+            else{throw new Error('Invalid query format')}
+        }
+
+    }
+    catch(err){
+        if(err.message == 'Invalid query format'){
+            res.status(400).json({message: "Invalid syntax"})
+        }
+        else{res.status(500).json({message:"Error fetching data"})}
+    }
 })
 
-// Get record of techician by id.
-router.get("/technicians/:technicianId", async (req, res)=>{ //test id: 11112222
-    await client.connect();
-    const coll = db.collection("stor_technicians");
-    const result = await coll.findOne({ technicianId: req.params.technicianId}).toArray(); 
-    res.json(result)
+// Get part records for labels using partCode query.
+router.post("/labels/partcode/:partcode", auth, async (req, res)=>{
+ 
+    // Note: :partcode param can contain multiple parts seperated by " ".
+
+    try{
+
+        if(req.params.query == ""){throw new Error('Invalid query format')}
+
+        const part = req.params.partcode.trim().toUpperCase();
+        const partsArr = part.split(' ');
+        await client.connect();
+        const coll = db.collection("uwm_stor_parts");
+        if(partsArr.length > 1){
+            const RegExPartsArr=[];
+            partsArr.forEach((p)=>{
+                const reStr =  '^' + p;
+                const re = new RegExp(reStr, 'i');
+                RegExPartsArr.push(re);
+            })
+            const result = await coll.find( { partCode: { $in: RegExPartsArr } })
+            .sort({warehouseBinLocation: 1, partCode: 1}).toArray();
+            res.json(result);
+            
+        }
+        else{
+            const reStr = '^' + part;
+            const re = new RegExp(reStr, 'i');
+            const result = await coll.find( { partCode: { $in: [re]} } )
+                .sort({warehouseBinLocation: 1, partCode: 1}).toArray();
+            res.json(result)
+        }
+    }
+    catch(err){
+        if(err.message == 'Invalid query format'){
+            res.status(400).json({message: "Invalid syntax"})
+        }
+        else{res.status(500).json({message:"Error fetching data"})}
+    }
 })
 
-// Get record of quaad user.
+// Get record of quaad user by email in request body.
 router.post("/users", async (req, res)=>{
     try{
         await client.connect();
@@ -41,81 +113,16 @@ router.post("/users", async (req, res)=>{
         res.json(result);
     }
     catch(err){
-        res.status(500).json({message:"Error"})
+        res.status(500).json({message:"Error fetching users"})
     }
 })
 
+// Get record of quaad user by email in url param.
+router.get("/users/:email", async (req, res)=>{ 
+    await client.connect();
+    const coll = db.collection("users");
+    const result = await coll.findOne({ email: req.params.email}); 
+    res.json(result)
+})
+
 export default router;
-
-//////Guide///////// 
-
-// // This section will help you get a list of all the records.
-// router.get("/", async (req, res) => {
-//   let collection = await db.collection("records");
-//   let results = await collection.find({}).toArray();
-//   res.send(results).status(200);
-// });
-
-// // This section will help you get a single record by id
-// router.get("/:id", async (req, res) => {
-//   let collection = await db.collection("records");
-//   let query = { _id: new ObjectId(req.params.id) };
-//   let result = await collection.findOne(query);
-
-//   if (!result) res.send("Not found").status(404);
-//   else res.send(result).status(200);
-// });
-
-
-// // This section will help you create a new record.
-// router.post("/", async (req, res) => {
-//   try {
-//     let newDocument = {
-//       name: req.body.name,
-//       position: req.body.position,
-//       level: req.body.level,
-//     };
-//     let collection = await db.collection("records");
-//     let result = await collection.insertOne(newDocument);
-//     res.send(result).status(204);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send("Error adding record");
-//   }
-// });
-
-// // This section will help you update a record by id.
-// router.patch("/:id", async (req, res) => {
-//   try {
-//     const query = { _id: new ObjectId(req.params.id) };
-//     const updates = {
-//       $set: {
-//         name: req.body.name,
-//         position: req.body.position,
-//         level: req.body.level,
-//       },
-//     };
-
-//     let collection = await db.collection("records");
-//     let result = await collection.updateOne(query, updates);
-//     res.send(result).status(200);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send("Error updating record");
-//   }
-// });
-
-// // This section will help you delete a record
-// router.delete("/:id", async (req, res) => {
-//   try {
-//     const query = { _id: new ObjectId(req.params.id) };
-
-//     const collection = db.collection("records");
-//     let result = await collection.deleteOne(query);
-
-//     res.send(result).status(200);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).send("Error deleting record");
-//   }
-// });

@@ -31,6 +31,21 @@ app.post('/auth-endpoint', auth, (req, res)=>{
   res.status(200).json(req.user);
 })
 
+// Checks if user is trying to register with an account that already exists.
+app.post("/currentuser", async(req, res)=>{
+  try{
+    await client.connect();
+    const database = client.db('quaad');
+    const coll = database.collection('users');
+    const match = await coll.findOne({email: req.body.email, employeeID: req.body.employeeID});
+    if(match !== null){
+      res.status(403).json({message: 'This user alreadly exists.'})
+    }
+    else{res.status(200).json({message: 'Account does not exist.'})}
+    }
+  catch{res.status(500).json({message: 'Something went wrong!'})}
+})
+
 app.post("/login", async(req, res)=>{
 
   try{
@@ -40,6 +55,7 @@ app.post("/login", async(req, res)=>{
     const cursor = coll.find({email: req.body.email}, {});
     const match = (await cursor.toArray());
     const storedPass = match[0].password;
+    const institution = match[0].institution;
 
     const hash = createHmac('sha256', req.body.password)
     .update('QuaCartoon1!')
@@ -57,6 +73,7 @@ app.post("/login", async(req, res)=>{
       res.status(200).send({
         message: "Login Successful",
         email: req.body.email.toLowerCase(),
+        institution: institution,
         token,
       });
     }
@@ -71,17 +88,30 @@ app.post("/login", async(req, res)=>{
 
 // Submit inventory pick with email notification.
 app.post('/pick', auth, async (req, res) => {
+  
   try{
-  const parts = [...req.body];
-  const technicianInfo = parts[0].technicianInfo;
-  res.render('notif_template.ejs', {parts: parts, technicianInfo: technicianInfo}, (err, html) => {
-    pickNotif(html).then(res.status(200).json({message: 'Submitted'}))
-  })
+    const parts = [...req.body];
+    const technicianInfo = parts[0].technicianInfo;
+    res.render('notif_template.ejs', {parts: parts, technicianInfo: technicianInfo}, (err, html) => {
+      pickNotif(html).then(res.status(200).json({message: 'Submitted'}))
+    })
   }
   catch{
     res.status(500).json({message: 'Failed to submit'})
   }
 });
+
+app.post("/print/labels/", auth, async(req, res)=>{
+
+  try{
+    res.render('labels.ejs', {
+      records: req.body
+    })
+  }
+  catch(err){
+  }
+
+})
 
 // Register new user.
 app.post("/register", async (req, res) => {
@@ -90,58 +120,65 @@ app.post("/register", async (req, res) => {
       // Using Mongo for quieries.
       await client.connect();
       
-      // using Mongoose for validations...Mongoose queries are not promises.
+      // Using Mongoose for validations only...Mongoose queries are not promises.
       await mongoose.connect(uri, {dbName: 'quaad'});  
 
       // Query Institution then create user.
       const database = client.db('quaad');
       let coll = database.collection('institutions');
       const institutionInput = req.body.institution.toLowerCase();
-      let cursor = await coll.find({name: institutionInput}, {});
-      let match = (await cursor.toArray()).length;
-      if(match>0){
+      let match = await coll.findOne({name: institutionInput});
+      if(match !== null){
         try{
           const emailInput = req.body.email.toLowerCase();
+          const employeeIDinput = req.body.employeeID;
           coll = database.collection('authorized_accounts');
-          //Note: Authorized users will already have an email account in db.
-          match = await coll.findOne({email: emailInput});
+          // Note: Authorized users will already have an email account in db.
+          const modEmployeeID = `_${employeeIDinput}`
+          match = await coll.findOne({employeeID: modEmployeeID, institution: institutionInput});
           if(match !==null){
-            if(match.email== emailInput){
-              const hash = createHmac('sha256', req.body.password)
-              .update('QuaCartoon1!')
-              .digest('hex')
-              
-              const user = new User(
+            const hash = createHmac('sha256', req.body.password)
+            .update('QuaCartoon1!')
+            .digest('hex')
+            
+            const user = new User(
+              {
+                ...match,
+                email: emailInput,
+                password: hash,
+              }
+            )
+            user.save()
+            .then(()=>{
+              const secretKey = process.env.SECRET_KEY;
+              const token = jwt.sign(
                 {
-                  email: emailInput,
-                  password: hash,
-                  institution: institutionInput,
-                  firstName: req.body.firstName,
-                  lastName: req.body.lastName,
-                  employeeID: req.body.employeeID
-                }
+                  payload: req.body.email.toLowerCase(),
+                }, 
+                secretKey,
+                { expiresIn: "8h" , algorithm: 'HS256'}
               )
-              user.save()
-              .then(()=>{res.status(201).send('New user created')})
-            }
-            else{
-              res.status(401).send('Unauthorized account') // Shouldn't occur here!
-            }
+              res.status(201).json({
+                message: "Login Successful",
+                email: emailInput,
+                token,
+              });
+            })
           }
           else{
-            res.status(401).send('Unauthorized account')
+            res.status(401).json({message: 'Unauthorized account'})
           }
         }
         catch{
-          res.status(500).send('Error creating user')
+          res.status(500).json({message: 'Error creating user'})
         }
       }
       else{
-        res.status(404).send('Institution not found')
+        res.status(404).json({message: 'Institution not found'})
       } 
     }
-    catch(err) {
-      res.status(500).send('Something went wrong')
+    catch(err){
+      res.status(500).json({message: 'Something went wrong!'})
     }
 });
 

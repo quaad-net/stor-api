@@ -68,7 +68,7 @@ app.post("/login", async(req, res)=>{
           payload: req.body.email.toLowerCase(),
         }, 
         secretKey,
-        { expiresIn: "8h" , algorithm: 'HS256'}
+        { expiresIn: "12h" , algorithm: 'HS256'}
       )
       res.status(200).send({
         message: "Login Successful",

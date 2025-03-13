@@ -73,6 +73,7 @@ app.post("/login", async(req, res)=>{
       res.status(200).send({
         message: "Login Successful",
         email: req.body.email.toLowerCase(),
+        userData: JSON.stringify(match[0]),
         institution: institution,
         token,
       });
@@ -134,7 +135,7 @@ app.post("/register", async (req, res) => {
           const employeeIDinput = req.body.employeeID;
           coll = database.collection('authorized_accounts');
           // Note: Authorized users will already have an email account in db.
-          const modEmployeeID = `_${employeeIDinput}`
+          const modEmployeeID = `_${employeeIDinput}` // note _
           match = await coll.findOne({employeeID: modEmployeeID, institution: institutionInput});
           if(match !==null){
             const hash = createHmac('sha256', req.body.password)
@@ -150,18 +151,8 @@ app.post("/register", async (req, res) => {
             )
             user.save()
             .then(()=>{
-              const secretKey = process.env.SECRET_KEY;
-              const token = jwt.sign(
-                {
-                  payload: req.body.email.toLowerCase(),
-                }, 
-                secretKey,
-                { expiresIn: "8h" , algorithm: 'HS256'}
-              )
               res.status(201).json({
-                message: "Login Successful",
-                email: emailInput,
-                token,
+                message: "User created",
               });
             })
           }

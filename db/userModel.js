@@ -42,6 +42,18 @@ const userSchema = new Schema({
         unique: false
       },
 
+      trade: {
+        type: String,
+        required: false,
+        unique: false
+      },
+
+      position: {
+        type: String,
+        required: false,
+        unique: false
+      },
+
       createdAt: {
         type: Date,
         default: () => Date.now(),

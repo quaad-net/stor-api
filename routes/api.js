@@ -104,6 +104,20 @@ router.post("/labels/partcode/:partcode", auth, async (req, res)=>{
     }
 })
 
+// Get part record
+router.get("/parts/:partCode", async (req, res)=>{ 
+    try{
+        await client.connect();
+        const coll = db.collection("uwm_stor_parts");
+        const result = await coll.findOne({ partCode: req.params.partCode}); 
+        if(result !== null){res.status(200).json(result)}
+        else{
+            throw new Error()
+        }
+    }
+    catch{res.status(404).json({message: 'No matching record found'})}
+})
+
 // Get record of quaad user by email in request body.
 router.post("/users", async (req, res)=>{
     try{

@@ -135,7 +135,7 @@ router.post("/users", async (req, res)=>{
 router.get("/users/:email", async (req, res)=>{ 
     await client.connect();
     const coll = db.collection("users");
-    const result = await coll.findOne({ email: req.params.email}); 
+    const result = await coll.find({email: req.params.email}).project({password: 0, _id: 0}).toArray();
     res.json(result)
 })
 

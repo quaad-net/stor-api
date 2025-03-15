@@ -70,10 +70,15 @@ app.post("/login", async(req, res)=>{
         secretKey,
         { expiresIn: "12h" , algorithm: 'HS256'}
       )
+
+      const modMatch = {
+        ...match[0], password: ''
+      }
+
       res.status(200).send({
         message: "Login Successful",
         email: req.body.email.toLowerCase(),
-        userData: JSON.stringify(match[0]),
+        userData: JSON.stringify(modMatch),
         institution: institution,
         token,
       });

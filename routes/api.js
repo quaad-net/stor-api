@@ -16,7 +16,7 @@ router.get("/", auth, async(req, res)=>{
     };
 })
 
-router.post("/inventory/partCode/:partcode", async (req, res)=>{
+router.post("/inventory/partCode/:partcode", auth, async (req, res)=>{
 
     // Note: :partcode param can contain multiple parts seperated by " ".
 
@@ -57,7 +57,7 @@ router.post("/inventory/partCode/:partcode", async (req, res)=>{
 
 })
 
-router.post("/inventory/binLoc/:query", async (req, res)=>{
+router.post("/inventory/binLoc/:query", auth, async (req, res)=>{
     
     try{
         if(req.params.query == ""){throw new Error('Invalid query format')}
@@ -102,6 +102,32 @@ router.post("/inventory/binLoc/:query", async (req, res)=>{
             res.status(400).json({message: "Invalid syntax"})
         }
         else{res.status(500).json({message:"Error fetching data"})}
+    }
+})
+
+router.post('/inventorycount', auth, async(req, res)=>{
+    try {
+        await client.connect();
+        const database = client.db('quaad');
+        const coll = database.collection('uwm_inventory_count');
+        const countDetails = {
+            code: req.body.code,
+            binLoc: req.body.binLoc,
+            inventoryCount: req.body.inventoryCount,
+            comment: req.body.comment,
+            description: req.body.description
+        };
+        const reCode = new RegExp(countDetails.code, 'i');
+        const reBinLoc = new RegExp(countDetails.binLoc,'i' );
+        const query = { code: reCode, binLoc: reBinLoc };
+        const result = await coll.replaceOne(query, countDetails, {upsert: true})
+        if(result.acknowledged){
+            res.status(201).json({message: 'Count posted'})
+        }
+        else throw new Error()
+    }
+    catch{
+        res.status(500).json({message: 'Unable to post count'})
     }
 })
 

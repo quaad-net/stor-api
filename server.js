@@ -88,7 +88,7 @@ app.post("/login", async(req, res)=>{
     }
   }
   catch{
-    res.status(500).send('Login error')
+    res.status(500).json({message: 'Login error'})
   }
 })
 

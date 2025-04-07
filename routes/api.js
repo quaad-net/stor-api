@@ -105,7 +105,7 @@ router.post("/inventory/binLoc/:query", auth, async (req, res)=>{
     }
 })
 
-router.post('/inventorycount', auth, async(req, res)=>{
+router.post('/inventory_count', auth, async(req, res)=>{
     try {
         await client.connect();
         const database = client.db('quaad');
@@ -115,7 +115,9 @@ router.post('/inventorycount', auth, async(req, res)=>{
             binLoc: req.body.binLoc,
             inventoryCount: req.body.inventoryCount,
             comment: req.body.comment,
-            description: req.body.description
+            description: req.body.description,
+            user: req.body.user,
+            date: req.body.date
         };
         const reCode = new RegExp(countDetails.code, 'i');
         const reBinLoc = new RegExp(countDetails.binLoc,'i' );
@@ -127,6 +129,36 @@ router.post('/inventorycount', auth, async(req, res)=>{
         else throw new Error()
     }
     catch{
+        res.status(500).json({message: 'Unable to post count'})
+    }
+})
+
+router.post('/inventory_tasks', auth, async(req, res)=>{
+    try {
+        await client.connect();
+        const database = client.db('quaad');
+        const coll = database.collection('uwm_inventory_tasks');
+        const taskDetails = {
+            code: req.body.code,
+            binLoc: req.body.binLoc,
+            taskType: req.body.taskType,
+            taskValues: req.body.taskValues,
+            comment: req.body.comment,
+            description: req.body.description,
+            user: req.body.user,
+            date: req.body.date,
+            completed: req.body.completed
+        };
+        
+        // const result = await coll.replaceOne(query, countDetails, {upsert: true})
+        const result = await coll.insertOne(taskDetails)
+        if(result.acknowledged){
+            res.status(201).json({message: 'Submitted'})
+        }
+        else throw new Error()
+    }
+    catch(err){
+        console.log(err)
         res.status(500).json({message: 'Unable to post count'})
     }
 })

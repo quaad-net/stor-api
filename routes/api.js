@@ -117,7 +117,7 @@ router.post('/inventory_count', auth, async(req, res)=>{
             comment: req.body.comment,
             description: req.body.description,
             user: req.body.user,
-            date: req.body.date
+            date: new Date(req.body.date)
         };
         const reCode = new RegExp(countDetails.code, 'i');
         const reBinLoc = new RegExp(countDetails.binLoc,'i' );
@@ -146,7 +146,7 @@ router.post('/inventory_tasks', auth, async(req, res)=>{
             comment: req.body.comment,
             description: req.body.description,
             user: req.body.user,
-            date: req.body.date,
+            date: new Date(req.body.date),
             completed: req.body.completed
         };
         
@@ -158,10 +158,42 @@ router.post('/inventory_tasks', auth, async(req, res)=>{
         else throw new Error()
     }
     catch(err){
-        console.log(err)
         res.status(500).json({message: 'Unable to post count'})
     }
 })
+
+router.post('/inventory_tasks/delete/:objectId', auth, async(req, res)=>{
+    try {
+        await client.connect();
+        const database = client.db('quaad');
+        const coll = database.collection('uwm_inventory_tasks');
+        const objectId = new ObjectId(req.params.objectId)
+        const result = await coll.deleteOne({_id: objectId});
+        if (result.deletedCount === 1) {
+            res.status(200).json({message: 'Success'})
+          } else {
+            throw new Error()
+        }
+    }
+    catch(err){
+        console.log(err)
+        res.status(500).json({message: 'Failed'})
+    }
+})
+
+router.post('/inventory_tasks/get-all', auth, async(req, res)=>{
+    try {
+        await client.connect();
+        const database = client.db('quaad');
+        const coll = database.collection('uwm_inventory_tasks');
+        const result = await coll.find({}).sort({date: -1}).toArray();
+        res.json(result);
+    }
+    catch(err){
+        res.status(500).json({message: 'Failed to fetch records'})
+    }
+})
+
 
 // Get part records for labels using warehouseBinLocation query.
 router.post("/labels/:query", auth, async (req, res)=>{

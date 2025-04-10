@@ -69,15 +69,15 @@
                                 </div>
                             </div>
                             <span class="label-part-details">
-                                <div id="label-part-code"><%=record.code%></div>
+                                <div id="label-part-code"><%=record.partCode%></div>
                                 <div id="label-description"><%=record.description%></div>
                                 <div class="label-last-line">
-                                    <div id="label-bin-location"><%=record.binLoc%>&nbsp;&nbsp;</div> 
+                                    <div id="label-bin-location"><%=record.warehouseBinLocation%>&nbsp;&nbsp;</div> 
                                     <div id="label-min-max">
-                                        <span id="label-min"><%=record.min%></span>/
-                                        <span id="label-max"><%=record.max%></span>
+                                        <span id="label-min"><%=record.warehouseMinimum%></span>/
+                                        <span id="label-max"><%=record.warehouseMaximum%></span>
                                     </div>
-                                    <!-- <span id="label-part-active">&nbsp;&nbsp;<%=record.active%></span> -->
+                                    <span id="label-part-active">&nbsp;&nbsp;<%=record.active%></span>
                                 </div>
                             </span>
                         </td>

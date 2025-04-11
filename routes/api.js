@@ -16,52 +16,59 @@ router.get("/", auth, async(req, res)=>{
     };
 })
 
-router.post("/inventory/partCode/:partcode", auth, async (req, res)=>{
+// router.post("/inventory/binLoc/:query", auth, async (req, res)=>{
+    
+//     try{
+//         if(req.params.query == ""){throw new Error('Invalid query format')}
+//         const queryStr = req.params.query.trim().toUpperCase();
+//         const queryArr = [...queryStr];
+//         const active = /&ACTIVE/ // Returns only active parts if present in query
+//         const isActive = active.test(queryStr);
+//         let colonCount = 0;
+//         queryArr.map((str)=>{
+//             if(str==':'){
+//                 colonCount += 1;
+//             }
+//         })
+//         if(colonCount == 1){ // Indicates a range of bin locations.
+//             const querySplit = queryStr.split(":");
+//             const startQryAt = querySplit[0];
+//             let endQryAt; 
+//             if(isActive){endQryAt =  querySplit[1].replace('&ACTIVE', '').trim()}
+//             else{ endQryAt = querySplit[1]}
+//             await client.connect();
+//             const coll = db.collection("uwm_inventory");
+//             const result = await coll.find( { binLoc: { $gte: startQryAt, $lte: endQryAt }, ...(isActive ? { active: 'True' } : {}) } )
+//             .project({_id: 0}).sort({binLoc: 1, code: 1}).toArray();
+//             res.json(result);
+//         }
+//         else{
+//             if(colonCount == 0){
+//                 await client.connect();
+//                 const coll = db.collection("uwm_inventory");
+//                 let getAllRecords = false;
+//                 if(queryStr == 'ALL'){getAllRecords = true};
+//                 const result = await coll.find( {...(getAllRecords ? {} : {binLoc: queryStr}), ...(isActive ? { active: 'True' } : {})} )
+//                 .project({_id: 0}).sort({binLoc: 1, code: 1}).toArray();
+//                 res.json(result);
+//             }
+//             else{throw new Error('Invalid query format')}
+//         }
 
-    // Note: :partcode param can contain multiple parts seperated by " ".
-
-    try{
-
-        if(req.params.partcode == ""){throw new Error('Invalid query format')}
-
-        const part = req.params.partcode.trim().toUpperCase();
-        const partsArr = part.split(' ');
-        await client.connect();
-        const coll = db.collection("uwm_inventory");
-        if(partsArr.length > 1){
-            const RegExPartsArr=[];
-            partsArr.forEach((p)=>{
-                const reStr =  '^' + p;
-                const re = new RegExp(reStr, 'i');
-                RegExPartsArr.push(re);
-            })
-            const result = await coll.find( { code: { $in: RegExPartsArr } })
-            .sort({binLoc: 1, code: 1}).toArray();
-            res.json(result);
-            
-        }
-        else{
-            const reStr = '^' + part;
-            const re = new RegExp(reStr, 'i');
-            const result = await coll.find( { code: { $in: [re]} } )
-                .sort({binLoc: 1, code: 1}).toArray();
-            res.json(result)
-        }
-    }
-    catch(err){
-        if(err.message == 'Invalid query format'){
-            res.status(400).json({message: "Invalid syntax"})
-        }
-        else{res.status(500).json({message:"Error fetching data"})}
-    }
-
-})
+//     }
+//     catch(err){
+//         if(err.message == 'Invalid query format'){
+//             res.status(400).json({message: "Invalid syntax"})
+//         }
+//         else{res.status(500).json({message:"Error fetching data"})}
+//     }
+// })
 
 router.post("/inventory/binLoc/:query", auth, async (req, res)=>{
     
     try{
         if(req.params.query == ""){throw new Error('Invalid query format')}
-        const queryStr = req.params.query.trim().toUpperCase();
+        const queryStr = req.params.query.toString().trim().toUpperCase();
         const queryArr = [...queryStr];
         const active = /&ACTIVE/ // Returns only active parts if present in query
         const isActive = active.test(queryStr);
@@ -89,7 +96,8 @@ router.post("/inventory/binLoc/:query", auth, async (req, res)=>{
                 const coll = db.collection("uwm_inventory");
                 let getAllRecords = false;
                 if(queryStr == 'ALL'){getAllRecords = true};
-                const result = await coll.find( {...(getAllRecords ? {} : {binLoc: queryStr}), ...(isActive ? { active: 'True' } : {})} )
+                const regExpQueryStr = new RegExp(queryStr, 'i');
+                const result = await coll.find( {...(getAllRecords ? {} : {binLoc: regExpQueryStr}), ...(isActive ? { active: 'True' } : {})} )
                 .project({_id: 0}).sort({binLoc: 1, code: 1}).toArray();
                 res.json(result);
             }
@@ -101,8 +109,88 @@ router.post("/inventory/binLoc/:query", auth, async (req, res)=>{
         if(err.message == 'Invalid query format'){
             res.status(400).json({message: "Invalid syntax"})
         }
+        else{
+            res.status(500).json({message:"Error fetching data"}
+        )}
+    }
+})
+
+
+router.post("/inventory/descr/:description", auth, async (req, res)=>{
+
+    try{
+        if(req.params.description == ""){throw new Error('Invalid query format')}
+        const desc = req.params.description.trim();
+        await client.connect();
+        const coll = db.collection("uwm_inventory");
+        // agg = coll.aggregate([
+        //     {
+        //       '$search': {
+        //         'index': 'description_search_index', 
+        //         'text': {
+        //           'query': desc.toString(), 
+        //           'path': 'description'
+        //         }
+        //       }
+        //     }
+        //   ])
+        
+        // const result = await coll.find(agg).toArray();
+        const reStr = '.*' + desc + '.*$';
+        const re = new RegExp(reStr, 'i');
+        const result = await coll.find( { description: { $in: [re]} } )
+            .sort({binLoc: 1, code: 1}).toArray();
+        res.json(result)
+    }
+    catch(err){
+        if(err.message == 'Invalid query format'){
+            res.status(400).json({message: "Invalid syntax"})
+        }
+        else{
+            res.status(500).json({message:"Error fetching data"})
+        }
+    }
+
+})
+
+router.post("/inventory/partCode/:partcode", auth, async (req, res)=>{
+
+    // Note: :partcode param can contain multiple parts seperated by " ".
+
+    try{
+
+        if(req.params.partcode == ""){throw new Error('Invalid query format')}
+
+        const part = req.params.partcode.trim();
+        const partsArr = part.split(' ');
+        await client.connect();
+        const coll = db.collection("uwm_inventory");
+        if(partsArr.length > 1){
+            const RegExPartsArr=[];
+            partsArr.forEach((p)=>{
+                const reStr =  '^' + p;
+                const re = new RegExp(reStr, 'i');
+                RegExPartsArr.push(re);
+            })
+            const result = await coll.find( { code: { $in: RegExPartsArr } })
+            .sort({binLoc: 1, code: 1}).toArray();
+            res.json(result);
+        }
+        else{
+            const reStr = '^' + part;
+            const re = new RegExp(reStr, 'i');
+            const result = await coll.find( { code: { $in: [re]} } )
+                .sort({binLoc: 1, code: 1}).toArray();
+            res.json(result)
+        }
+    }
+    catch(err){
+        if(err.message == 'Invalid query format'){
+            res.status(400).json({message: "Invalid syntax"})
+        }
         else{res.status(500).json({message:"Error fetching data"})}
     }
+
 })
 
 router.post('/inventory_count', auth, async(req, res)=>{
@@ -176,7 +264,6 @@ router.post('/inventory_tasks/delete/:objectId', auth, async(req, res)=>{
         }
     }
     catch(err){
-        console.log(err)
         res.status(500).json({message: 'Failed'})
     }
 })

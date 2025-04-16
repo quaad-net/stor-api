@@ -37,9 +37,10 @@ app.post("/currentuser", async(req, res)=>{
     await client.connect();
     const database = client.db('quaad');
     const coll = database.collection('users');
-    const match = await coll.findOne({email: req.body.email, employeeID: req.body.employeeID});
-    if(match !== null){
-      res.status(403).json({message: 'This user alreadly exists.'})
+    const anyCaseEmail = new RegExp(req.body.email, 'i')
+    const match = await coll.find({email: anyCaseEmail, employeeID: "_" + req.body.employeeID}).toArray();
+    if(match.length > 0){
+      res.status(403).json({message: 'This user already exists.'})
     }
     else{res.status(200).json({message: 'Account does not exist.'})}
     }
@@ -52,7 +53,8 @@ app.post("/login", async(req, res)=>{
     await client.connect();
     const database = client.db('quaad');
     const coll = database.collection('users');
-    const cursor = coll.find({email: req.body.email}, {});
+    const anyCaseEmail = new RegExp(req.body.email, 'i');
+    const cursor = coll.find({email: anyCaseEmail}, {});
     const match = (await cursor.toArray());
     const storedPass = match[0].password;
     const institution = match[0].institution;
@@ -124,23 +126,24 @@ app.post("/print/labels/", auth, async(req, res)=>{
 app.post("/register", async (req, res) => {
 
     try {
-      // Using Mongo for quieries.
       await client.connect();
       
-      // Using Mongoose for validations only...Mongoose queries are not promises.
+      // Using Mongoose for validations only
+      // Note: Mongoose queries are not promises.
       await mongoose.connect(uri, {dbName: 'quaad'});  
 
       // Query Institution then create user.
       const database = client.db('quaad');
       let coll = database.collection('institutions');
-      const institutionInput = req.body.institution.toLowerCase();
+      // const institutionInput = req.body.institution.toLowerCase();
+      const institutionInput = new RegExp(req.body.institution, 'i')
       let match = await coll.findOne({name: institutionInput});
       if(match !== null){
         try{
           const emailInput = req.body.email.toLowerCase();
           const employeeIDinput = req.body.employeeID;
           coll = database.collection('authorized_accounts');
-          // Note: Authorized users will already have an email account in db.
+          // Note: Authorized users will already have an account in "authorized_accounts" collection in db.
           const modEmployeeID = `_${employeeIDinput}` // note _
           match = await coll.findOne({employeeID: modEmployeeID, institution: institutionInput});
           if(match !==null){

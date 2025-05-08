@@ -130,9 +130,6 @@ router.post("/inventory/partCode", auth, async (req, res)=>{
 
 })
 
-// router.post("/inventory/ware", auth, async (req, res)=>{
-
-// })
 
 router.get('/inventory/usage_analysis/:institution/:partcode', async(req, res)=>{
     try{

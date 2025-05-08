@@ -44,6 +44,28 @@ export async function updatePartUsageAnalysis(){
     try{
         await client.connect();
         const database = client.db('quaad');
+
+        //Update leadTime
+
+        const leadColl = database.collection('uwm_high_lead_time_parts'); 
+        const highLeads = await leadColl.find({}).toArray();
+        const mainColl = database.collection('uwm_inventory');
+        // Set default leadTime: 14
+        await mainColl.updateMany({}, {$set: {leadTime: 14}});
+        
+        // Update collection with actual lead times
+        async function updateLeadTime(filter, updateDoc){
+          const result = await mainColl.updateMany(filter, updateDoc);
+        }
+        highLeads.forEach((lead)=>{
+          const updateDoc = {
+            $set: {leadTime: lead.est_lead_time_days}
+          }
+          updateLeadTime({code: lead.part_code}, updateDoc)
+        })
+
+        //Update Analsis 
+
         const inventoryColl = database.collection('uwm_inventory');
         const leadTimeColl = database.collection('uwm_high_lead_time_parts');
         const usageColl = database.collection('uwm_part_usage');
@@ -52,7 +74,10 @@ export async function updatePartUsageAnalysis(){
         const usageP1Coll = database.collection('uwm_part_usage_122_90');
         const usageP2Coll = database.collection('uwm_part_usage_91_59');
         const usageP3Coll = database.collection('uwm_part_usage_60_28');
-        await analysisColl.deleteMany({})
+
+        await analysisColl.deleteMany({});
+        await usageAnalysisMissed.deleteMany({});
+
         const distinctParts = await usageColl.distinct('materialPartCode', {})
 
         for await (const part of distinctParts){
@@ -69,12 +94,7 @@ export async function updatePartUsageAnalysis(){
               total90DayUsage += o.materialQuantity
           })
           avgDailyUsage = total90DayUsage / 90; 
-          //codemark
-          function addDays(date, days) {
-            let result = new Date(date);
-            result.setDate(result.getDate() + days);
-            return result;
-          }
+
           const p1occurances = await usageP1Coll.find({materialPartCode: part}).project({_id: 0, materialQuantity: 1 }).toArray();
           p1occurances.forEach((o)=>{
             p1Usage += o.materialQuantity
@@ -94,7 +114,7 @@ export async function updatePartUsageAnalysis(){
           if(partArr.length == 3){
               const simpleCode = partArr[0] + '-' + partArr[1];
               const warehouseCode = partArr[2];
-              const inventoryRec = await inventoryColl.find({code: simpleCode, warehouseCode: warehouseCode}).toArray()
+              const inventoryRec = await inventoryColl.find({code: simpleCode, warehouseCode: Number(warehouseCode)}).toArray()
               if(inventoryRec.length == 1){
                   const partInventory  = inventoryRec[0];
                   min = partInventory.min
@@ -136,28 +156,4 @@ export async function updatePartUsageAnalysis(){
         await client.close();
     }
 } 
-
-export async function updateLeadTimes(){
-    // Updates uwm_inventory with leadTime from uwm_high_lead_time_parts. 
-    try{
-      await client.connect();
-      const database = client.db('quaad');
-      const leadColl = database.collection('uwm_high_lead_time_parts'); 
-      const highLeads = await leadColl.find({}).toArray();
-      const mainColl = database.collection('uwm_inventory');
-      await mainColl.updateMany({}, {$set: {leadTime: 14}});
-      async function updateLeadTime(filter, updateDoc){
-        const result = await mainColl.updateMany(filter, updateDoc);
-        console.log(`Updated ${result.modifiedCount} record(s).`)
-      }
-      highLeads.forEach((lead)=>{
-        const updateDoc = {
-          $set: {leadTime: lead.est_lead_time_days}
-        }
-        updateLeadTime({code: lead.part_code}, updateDoc)
-      })
-    }finally{
-      await client.close();
-    }
-  }
 

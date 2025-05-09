@@ -113,8 +113,9 @@ export async function updatePartUsageAnalysis(){
           const partArr = part.split('-');
           if(partArr.length == 3){
               const simpleCode = partArr[0] + '-' + partArr[1];
-              const warehouseCode = partArr[2];
-              const inventoryRec = await inventoryColl.find({code: simpleCode, warehouseCode: Number(warehouseCode)}).toArray()
+              let warehouseCode = partArr[2];
+              if(Number(warehouseCode)){warehouseCode = Number(warehouseCode)};
+              const inventoryRec = await inventoryColl.find({code: simpleCode, warehouseCode: warehouseCode}).toArray();
               if(inventoryRec.length == 1){
                   const partInventory  = inventoryRec[0];
                   min = partInventory.min

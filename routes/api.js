@@ -2,7 +2,6 @@ import express, { json, Router } from "express";
 import {db, client} from "../db/connection.js";
 import auth from "../auth.js";
 import { ObjectId } from "mongodb";
-import { connect } from "mongoose";
 
 const router = express.Router();
 
@@ -162,7 +161,8 @@ router.post('/inventory_count', auth, async(req, res)=>{
         const countDetails = {
             code: req.body.code,
             binLoc: req.body.binLoc,
-            inventoryCount: req.body.inventoryCount,
+            warehouseCode: req.body.warehouseCode,
+            inventoryCount: Number(req.body.inventoryCount),
             comment: req.body.comment,
             description: req.body.description,
             user: req.body.user,
@@ -170,7 +170,8 @@ router.post('/inventory_count', auth, async(req, res)=>{
         };
         const reCode = new RegExp(countDetails.code, 'i');
         const reBinLoc = new RegExp(countDetails.binLoc,'i' );
-        const query = { code: reCode, binLoc: reBinLoc };
+        const reWare = new RegExp(countDetails.warehouseCode,'i' );
+        const query = { code: reCode, binLoc: reBinLoc, warehouseCode: reWare };
         const result = await coll.replaceOne(query, countDetails, {upsert: true})
         if(result.acknowledged){
             res.status(201).json({message: 'Count posted'})
@@ -190,6 +191,7 @@ router.post('/inventory_tasks', auth, async(req, res)=>{
         const taskDetails = {
             code: req.body.code,
             binLoc: req.body.binLoc,
+            warehouseCode: req.body.warehouseCode,
             taskType: req.body.taskType,
             taskValues: req.body.taskValues,
             comment: req.body.comment,
@@ -206,6 +208,7 @@ router.post('/inventory_tasks', auth, async(req, res)=>{
         else throw new Error()
     }
     catch(err){
+        console.log(err);
         res.status(500).json({message: 'Unable to post task'})
     }
 })

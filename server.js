@@ -23,9 +23,6 @@ app.use(express.static('public'));
 
 app.set('view engine', 'ejs');
 
-
-////////////////////////////////////// POSTS ////////////////////////////////////////////
-
 // Test auth 
 app.post('/auth-endpoint', auth, (req, res)=>{
   res.status(200).json(req.user);
@@ -95,19 +92,19 @@ app.post("/login", async(req, res)=>{
 })
 
 // Submit inventory pick with email notification.
-app.post('/pick', auth, async (req, res) => {
+// app.post('/pick', auth, async (req, res) => {
   
-  try{
-    const parts = [...req.body];
-    const technicianInfo = parts[0].technicianInfo;
-    res.render('notif_template.ejs', {parts: parts, technicianInfo: technicianInfo}, (err, html) => {
-      pickNotif(html).then(res.status(200).json({message: 'Submitted'}))
-    })
-  }
-  catch{
-    res.status(500).json({message: 'Failed to submit'})
-  }
-});
+//   try{
+//     const parts = [...req.body];
+//     const technicianInfo = parts[0].technicianInfo;
+//     res.render('notif_template.ejs', {parts: parts, technicianInfo: technicianInfo}, (err, html) => {
+//       pickNotif(html).then(res.status(200).json({message: 'Submitted'}))
+//     })
+//   }
+//   catch{
+//     res.status(500).json({message: 'Failed to submit'})
+//   }
+// });
 
 app.post("/print/labels/", auth, async(req, res)=>{
 
@@ -135,7 +132,6 @@ app.post("/register", async (req, res) => {
       // Query Institution then create user.
       const database = client.db('quaad');
       let coll = database.collection('institutions');
-      // const institutionInput = req.body.institution.toLowerCase();
       const institutionInput = new RegExp(req.body.institution, 'i')
       let match = await coll.findOne({name: institutionInput});
       if(match !== null){

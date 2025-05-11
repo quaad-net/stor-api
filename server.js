@@ -119,6 +119,23 @@ app.post("/print/labels/", auth, async(req, res)=>{
 
 })
 
+app.get("/proxy/fiscal/:path/:arg", async (req, res)=>{
+
+  fetch(`${process.env.FISCAL_API}/${req.params.path}/${req.params.arg}`)
+   .then((proxyRes)=>{
+       if(proxyRes.status != 200){throw new Error()}
+       return proxyRes.json()
+   })
+   .then((proxyRes)=>{
+       res.status(200).json({data: proxyRes})
+   })
+   .catch((err)=>{
+    console.log(err);
+    res.status(500).json({message: err})
+  })
+
+})
+
 // Register new user.
 app.post("/register", async (req, res) => {
 

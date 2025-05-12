@@ -129,9 +129,8 @@ app.get("/proxy/fiscal/:path/:arg", async (req, res)=>{
    .then((proxyRes)=>{
        res.status(200).json({data: proxyRes})
    })
-   .catch((err)=>{
-    console.log(err);
-    res.status(500).json({message: err})
+   .catch(()=>{
+    res.status(500).json({message: 'Failed operation'})
   })
 
 })

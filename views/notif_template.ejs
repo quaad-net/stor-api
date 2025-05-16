@@ -3,67 +3,34 @@
       <table style="width: 100%; background-color: #242424;">
          <thead>
                <tr>
-                  <th><h1 class="title" style="text-align: left; padding-left: 5px;;">stor.quaad</h1></th>
+                  <th><h1 class="title" style="text-align: left; padding-left: 5px;">::notification |&nbsp;<%=details.taskType%> </h1></th>
                </tr>
          </thead>
          <tbody>
-               <tr class="null">
-                  <td>&nbsp;</td>
-               </tr>
-               <span class="technician-info">
-                  <tr>
-                     <td style="padding-left: 5px;"><strong>Technician Name:</strong> <%=technicianInfo.firstName%>&nbsp;<%=technicianInfo.lastName%></td>
-                  </tr>
-                  <tr>
-                     <td style="padding-left: 5px;"><strong>Trade:</strong> <%=technicianInfo.trade%></td>
-                  </tr>
-                  <tr>
-                     <td style="padding-left: 5px;"><strong>Date:</strong> <%=technicianInfo.date%></td>
-                  </tr>
-               </span>
-               <tr class="null"><td>&nbsp;</td>
-               </tr>
-               <% parts.forEach((part)=>{%>
-               <span class="part-details">
-                  <tr>
-                     <td style="padding-left: 5px;"><strong>Part:</strong> <%=part.part%></td>
-                  </tr>
-                  <tr>
-                     <td style="padding-left: 5px;"><strong>description:</strong> <%=part.description%></td>
-                  </tr>
-                  <tr>
-                     <td style="padding-left: 5px;"><strong>Qty:</strong> <%=part.qty%></td>
-                  </tr>
-                  <tr>
-                     <td style="padding-left: 5px;"><strong>Unit:</strong> <%=part.unit%></td>
-                  </tr>
-                  <tr>
-                     <td style="padding-left: 5px;"><strong>Warehouse:</strong> <%=part.warehouse%></td>
-                  </tr>
-                  <tr>
-                     <td style="padding-left: 5px;"><strong>Workorder:</strong> <%=part.workorder%></td>
-                  </tr>
-                  <tr>
-                     <td style="padding-left: 5px;"><strong>Reorder:</strong> <%=part.reorder%></td>
-                  </tr>
-                  <tr>
-                     <td style="padding-left: 5px;"><strong>ReorderAmt:</strong> <%=part.reorderAmt%></td>
-                  </tr>
-                  <tr class="null">
-                     <td>&nbsp;</td>
-                  </tr>
-               </span>
-               <%})%>
-               <tr class="null"><td>&nbsp;</td>
-               </tr>
-               <tr>
-                  <td>
-                     <img src="https://imagedelivery.net/hvBzZjzDepIfNAvBsmlTgA/95db0fb7-976e-48eb-14e1-f36a74718400/public" 
-                     alt="Quaad Logo" 
-                     style="width:70x; margin-left: 15px;"/>
-                  </td>
-               </tr>
-               <tr><td style="padding-left: 5px;"><i>No reply to</br>uwm@quaad</i></td></tr>
+            <tr>
+               <td style="padding-left: 5px;"><strong>user: </strong><%=details.user%></td>
+            </tr>
+            <tr>
+               <td style="padding-left: 5px;"><strong>code: </strong><%=details.code%></td>
+            </tr>
+            <tr>
+               <td style="padding-left: 5px;"><strong>description: </strong><%=details.description%></td>
+            </tr>
+            <tr>
+               <td style="padding-left: 5px;"><strong>binLoc: </strong><%=details.binLoc%></td>
+            </tr>
+            <tr>
+               <td style="padding-left: 5px;"><strong>warehouseCode: </strong><%=details.warehouseCode%></td>
+            </tr>
+            <tr>
+               <td style="padding-left: 5px;"><strong>details: </strong><%=details.taskValues%></td>
+            </tr>
+            <tr>
+               <td style="padding-left: 5px;"><strong>comment: </strong><%=details.comment%></td>
+            </tr>
+            <tr>
+               <td style="padding-left: 5px;"><strong>date: </strong><%=details.date%></td>
+            </tr>
          </tbody>
       </table>
    </body>

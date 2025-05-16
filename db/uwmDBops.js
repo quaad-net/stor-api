@@ -35,6 +35,10 @@ export async function deletePartUsageRecords(){
     const clientDeleteRes = await client.bulkWrite(clientDeletes);
     console.log(`Deleted documents: ${clientDeleteRes.deletedCount}`);
   }
+  catch(err){
+    client.close()
+    console.log(err)
+  }
   finally{
     client.close()
   }
@@ -152,6 +156,10 @@ export async function updatePartUsageAnalysis(){
           }
           await analysisColl.insertOne(analysis)
         }
+    }
+    catch(err){
+      client.close()
+      console.log(err)
     }
     finally{
         await client.close();

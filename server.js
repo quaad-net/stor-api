@@ -1,7 +1,7 @@
 import express from "express";
 import cors from "cors";
 import apiRouter from "./routes/api.js";
-import pickNotif from "./email/notif.js";
+import notif from "./email/notif.js";
 import "dotenv/config";
 import User from "./db/userModel.js";
 import { MongoClient } from "mongodb";
@@ -91,20 +91,78 @@ app.post("/login", async(req, res)=>{
   }
 })
 
-// Submit inventory pick with email notification.
-// app.post('/pick', auth, async (req, res) => {
+app.post('/:institution/notif', auth, async (req, res) => {
+  // Confirmation notification to user and default notification receivers 
   
-//   try{
-//     const parts = [...req.body];
-//     const technicianInfo = parts[0].technicianInfo;
-//     res.render('notif_template.ejs', {parts: parts, technicianInfo: technicianInfo}, (err, html) => {
-//       pickNotif(html).then(res.status(200).json({message: 'Submitted'}))
-//     })
-//   }
-//   catch{
-//     res.status(500).json({message: 'Failed to submit'})
-//   }
-// });
+  try{
+    const defaultReceivers = new Map([
+      ['uwm', 3532],
+    ])
+    const institution = req.params.institution;
+    const details = {...req.body};
+    await client.connect();
+    const db = client.db('quaad');
+    const coll = db.collection(`${institution}_notification_receivers`);
+    const match = await  coll.find({warehouseCode: defaultReceivers.get(institution) }).project({_id: 0, email: 1}).toArray()
+    const emails = [];
+    match.forEach((m)=>{emails.push(m.email.toString())});
+    const sendTos = [];
+    emails.forEach((email)=>{
+      if(email != details.user){sendTos.push(email)}
+    });
+    sendTos.push(details.user);
+    const from = `${institution}@quaad.net`;
+    res.render('notif_template.ejs', {details}, (err, html) => {
+      notif(html, sendTos, from).then((notifRes)=>{
+        if(notifRes != 0){throw new Error()}
+        else{res.status(200).json({message: 'Success'})}
+      })
+    })
+  }
+  catch(err){
+    res.status(500).json({message: 'Could not complete operation'})
+  }
+});
+
+app.post('/:institution/zero-stock-notif', auth, async (req, res) => {
+  
+  try{
+    const defaultReceivers = new Map([
+      ['uwm', 3532],
+    ])
+    const institution = req.params.institution;
+    const details = {...req.body};
+    await client.connect();
+    const db = client.db('quaad');
+    const coll = db.collection(`${institution}_notification_receivers`);
+    const defaultWare = defaultReceivers.get(institution);
+    const warehouseCodes = [defaultWare];
+    if(defaultWare != details.warehouseCode){
+      warehouseCodes.push(details.warehouseCode)
+    }
+    const match = await coll.find({warehouseCode: {$in: warehouseCodes}}).project({_id: 0, email: 1}).toArray()
+    const emails = [];
+    match.forEach((m)=>{emails.push(m.email.toString())});
+    const sendTos = [];
+    emails.forEach((email)=>{
+      if(email != details.user){sendTos.push(email)}
+    });
+    sendTos.push(details.user);
+    const from = `${institution}@quaad.net`;
+    // res.render('notif_template.ejs', {details}, (err, html) => {
+    //   notif(html, sendTos, from).then((notifRes)=>{
+    //     if(notifRes != 0){throw new Error()}
+    //     else{res.status(200).json({message: 'Success'})}
+    //   })
+    // })
+    console.log(`from: ${from}`)
+    console.log(`to: ${sendTos}`)
+    res.status(200).json({message: 'Success'})
+  }
+  catch(err){
+    res.status(500).json({message: 'Could not complete operation'})
+  }
+});
 
 app.post("/print/labels/", auth, async(req, res)=>{
 

@@ -138,13 +138,13 @@ export async function updatePartUsageAnalysis(){
             usageAnalysisMissed.insertOne({_id: part});
             continue
           }
-          const suggestedMin =  Number((leadTime * avgDailyUsage).toFixed(0));
+          const suggestedMin =  ((leadTime * avgDailyUsage));
           const analysis = {
               code: part,
               leadTime: leadTime,
               min: min,
               max: max,
-              avgDailyUsage: avgDailyUsage.toFixed(2),
+              avgDailyUsage: avgDailyUsage,
               total90DayUsage: total90DayUsage,
               p1Usage: p1Usage,
               p2Usage: p2Usage,

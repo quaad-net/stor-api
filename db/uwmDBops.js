@@ -49,12 +49,12 @@ export async function updatePartUsageAnalysis(){
         await client.connect();
         const database = client.db('quaad');
 
-        //Update leadTime
+        // Update leadTime
 
         const leadColl = database.collection('uwm_high_lead_time_parts'); 
         const highLeads = await leadColl.find({}).toArray();
         const mainColl = database.collection('uwm_inventory');
-        // Set default leadTime: 14
+        // Default leadTime: 14
         await mainColl.updateMany({}, {$set: {leadTime: 14}});
         
         // Update collection with actual lead times
@@ -68,7 +68,7 @@ export async function updatePartUsageAnalysis(){
           updateLeadTime({code: lead.part_code}, updateDoc)
         })
 
-        //Update Analsis 
+        // Update Analsis 
 
         const inventoryColl = database.collection('uwm_inventory');
         const leadTimeColl = database.collection('uwm_high_lead_time_parts');
@@ -86,9 +86,9 @@ export async function updatePartUsageAnalysis(){
 
         for await (const part of distinctParts){
           let total90DayUsage = 0;
-          let p1Usage = 0; // -122 days < part usage > -90 days
-          let p2Usage = 0; // -91 days < part usage > -59 days
-          let p3Usage = 0; // -60 days < part usage > -28 days
+          let p1Usage = 0; // -122 days < part usage date > -90 days
+          let p2Usage = 0; // -91 days < part usage date > -59 days
+          let p3Usage = 0; // -60 days < part usage date > -28 days
           let min = 0;
           let max = 0;
           let leadTime = 14;
@@ -149,8 +149,8 @@ export async function updatePartUsageAnalysis(){
               p1Usage: p1Usage,
               p2Usage: p2Usage,
               p3Usage: p3Usage,
-              increaseSchema: ((leadTime * avgDailyUsage) > Number(min) + 1), // prev: Number(min) != 0 ? ((leadTime * avgDailyUsage) > Number(min)) : false
-              decreaseSchema: (2 * (leadTime * avgDailyUsage) < Number(min)), // Number(min) != 0 ? (2 * (leadTime * avgDailyUsage) < Number(min)) : false
+              increaseSchema: ((leadTime * avgDailyUsage) > Number(min) + 1),
+              decreaseSchema: (2 * (leadTime * avgDailyUsage) < Number(min)),
               suggestedMin: suggestedMin,
               analysisDate: new Date().toLocaleDateString()
           }

@@ -10,6 +10,8 @@ async function auth(req, res, next){
         );
         const user = await decodedToken;
         req.user = user;
+        const restricted = process.env.RESTRICTED;
+        if(req.user.payload == restricted){req.access = restricted};
         next();
     }
     catch(err){

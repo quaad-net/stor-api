@@ -1,11 +1,13 @@
-import express, { json, Router } from "express";
-import {db, client} from "../db/connection.js";
-import auth from "../auth.js";
+import 'dotenv/config';
+import express from "express";
 import { ObjectId } from "mongodb";
+
+import auth from "../auth.js";
+import {client, db} from "../db/connection.js";
+
 
 const router = express.Router();
 
-// Test application.
 router.get("/", auth, async(req, res)=>{
     try{
         await client.connect();
@@ -155,6 +157,7 @@ router.get('/inventory/usage_analysis/:institution/:partcode', async(req, res)=>
 
 router.post('/inventory_count', auth, async(req, res)=>{
     try {
+        if(req?.access == process.env.RESTRICTED){throw new Error('Unauthorized')}
         await client.connect();
         const database = client.db('quaad');
         const coll = database.collection('uwm_inventory_count');
@@ -168,11 +171,12 @@ router.post('/inventory_count', auth, async(req, res)=>{
             user: req.body.user,
             date: new Date(req.body.date)
         };
-        if(countDetails.user == 'johndoe@quaad.net'){throw new Error('Unauthorized')}
         const reCode = new RegExp(countDetails.code, 'i');
         const reBinLoc = new RegExp(countDetails.binLoc,'i' );
-        const reWare = new RegExp(countDetails.warehouseCode,'i' );
-        const query = { code: reCode, binLoc: reBinLoc, warehouseCode: reWare };
+        let warehouseCode;
+        if(Number(countDetails.warehouseCode)){warehouseCode = Number(countDetails.warehouseCode)}
+        else{warehouseCode = countDetails.warehouseCode}
+        const query = { code: reCode, binLoc: reBinLoc, warehouseCode: warehouseCode };
         const result = await coll.replaceOne(query, countDetails, {upsert: true})
         if(result.acknowledged){
             res.status(201).json({message: 'Count posted'})
@@ -187,6 +191,7 @@ router.post('/inventory_count', auth, async(req, res)=>{
 
 router.post('/inventory_tasks', auth, async(req, res)=>{
     try {
+        if(req?.access == process.env.RESTRICTED){throw new Error('Unauthorized')}
         await client.connect();
         const database = client.db('quaad');
         const coll = database.collection('uwm_inventory_tasks');
@@ -202,7 +207,6 @@ router.post('/inventory_tasks', auth, async(req, res)=>{
             date: new Date(req.body.date),
             completed: req.body.completed
         };
-        if(taskDetails.user == 'johndoe@quaad.net'){throw new Error('Unauthorized')}
         const result = await coll.insertOne(taskDetails)
         if(result.acknowledged){
             res.status(201).json({message: 'Submitted'})
@@ -217,6 +221,7 @@ router.post('/inventory_tasks', auth, async(req, res)=>{
 
 router.post('/inventory_tasks_print', auth, async(req, res)=>{
     try {
+        if(req?.access == process.env.RESTRICTED){throw new Error('Unauthorized')}
         await client.connect();
         const database = client.db('quaad');
         const coll = database.collection('uwm_inventory_tasks_print');
@@ -231,7 +236,6 @@ router.post('/inventory_tasks_print', auth, async(req, res)=>{
             date: new Date(req.body.date),
             completed: req.body.completed
         };
-        if(printDetails.user == 'johndoe@quaad.net'){throw new Error('Unauthorized')}
         const result = await coll.insertOne(printDetails)
         if(result.acknowledged){
             res.status(201).json({message: 'Submitted'})
@@ -246,6 +250,7 @@ router.post('/inventory_tasks_print', auth, async(req, res)=>{
 
 router.post('/inventory_tasks/delete/:objectId', auth, async(req, res)=>{
     try {
+        if(req?.access == process.env.RESTRICTED){throw new Error('Unauthorized')}
         await client.connect();
         const database = client.db('quaad');
         const coll = database.collection('uwm_inventory_tasks');
@@ -259,12 +264,14 @@ router.post('/inventory_tasks/delete/:objectId', auth, async(req, res)=>{
         }
     }
     catch(err){
-        res.status(500).json({message: 'Failed'})
+        if(err.message == 'Unauthorized'){res.status(401).json({message: 'Unauthorized'})}
+        else{res.status(500).json({message: 'Failed'})}
     }
 })
 
 router.post('/inventory_tasks_print/delete/:objectId', auth, async(req, res)=>{
     try {
+        if(req?.access == process.env.RESTRICTED){throw new Error('Unauthorized')}
         await client.connect();
         const database = client.db('quaad');
         const coll = database.collection('uwm_inventory_tasks_print');
@@ -277,12 +284,14 @@ router.post('/inventory_tasks_print/delete/:objectId', auth, async(req, res)=>{
         }
     }
     catch(err){
-        res.status(500).json({message: 'Failed'})
+        if(err.message == 'Unauthorized'){res.status(401).json({message: 'Unauthorized'})}
+        else{res.status(500).json({message: 'Failed'})}
     }
 })
 
 router.post('/inventory_tasks_print/delete-all', auth, async(req, res)=>{
     try {
+        if(req?.access == process.env.RESTRICTED){throw new Error('Unauthorized')}
         await client.connect();
         const database = client.db('quaad');
         const coll = database.collection('uwm_inventory_tasks_print');
@@ -298,13 +307,14 @@ router.post('/inventory_tasks_print/delete-all', auth, async(req, res)=>{
         }
     }
     catch(err){
-        res.status(500).json({message: 'Failed'})
+        if(err.message == 'Unauthorized'){res.status(401).json({message: 'Unauthorized'})}
+        else{res.status(500).json({message: 'Failed'})}
     }
 })
 
 router.post('/inventory_tasks/get-all', auth, async(req, res)=>{
     try {
-        if(req.body.user == 'johndoe@quaad.net'){throw new Error('Unauthorized')}
+        if(req?.access == process.env.RESTRICTED){throw new Error('Unauthorized')}
         await client.connect();
         const database = client.db('quaad');
         const coll = database.collection('uwm_inventory_tasks');
@@ -319,7 +329,7 @@ router.post('/inventory_tasks/get-all', auth, async(req, res)=>{
 
 router.post('/inventory_tasks_print/get-all', auth, async(req, res)=>{
     try {
-        if(req.body.user == 'johndoe@quaad.net'){throw new Error('Unauthorized')}
+        if(req?.access == process.env.RESTRICTED){throw new Error('Unauthorized')}
         await client.connect();
         const database = client.db('quaad');
         const coll = database.collection('uwm_inventory_tasks_print');
@@ -331,54 +341,5 @@ router.post('/inventory_tasks_print/get-all', auth, async(req, res)=>{
         else{res.status(500).json({message: 'Failed to fetch records'})}
     }
 })
-
-// // Get part record with no auth
-// router.get("/parts/:partCode", async (req, res)=>{ 
-//     try{
-//         await client.connect();
-//         const coll = db.collection("uwm_stor_parts");
-//         const result = await coll.findOne({ partCode: req.params.partCode}); 
-//         if(result !== null){res.status(200).json(result)}
-//         else{
-//             res.status(404).json({message: 'Record not found'})
-//         }
-//     }
-//     catch{res.status(500).json({message: 'Something went wrong'})}
-// })
-
-// // Get part record with auth
-// router.post("/parts/:partCode", auth, async (req, res)=>{ 
-//     try{
-//         await client.connect();
-//         const coll = db.collection("uwm_stor_parts");
-//         const result = await coll.findOne({ partCode: req.params.partCode}); 
-//         if(result !== null){res.status(200).json(result)}
-//         else{
-//             res.status(404).json({message: 'Record not found'})
-//         }
-//     }
-//     catch{res.status(500).json({message: 'Something went wrong'})}
-// })
-
-// // Get record of quaad user by email in request body.
-// router.post("/users", async (req, res)=>{
-//     try{
-//         await client.connect();
-//         const coll = db.collection("users");
-//         const result = await coll.find({email: req.body.email}).project({password: 0, _id: 0}).toArray();
-//         res.json(result);
-//     }
-//     catch(err){
-//         res.status(500).json({message:"Error fetching users"})
-//     }
-// })
-
-// // Get record of quaad user by email in url param.
-// router.get("/users/:email", async (req, res)=>{ 
-//     await client.connect();
-//     const coll = db.collection("users");
-//     const result = await coll.find({email: req.params.email}).project({password: 0, _id: 0}).toArray();
-//     res.json(result)
-// })
 
 export default router;

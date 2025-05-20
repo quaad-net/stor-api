@@ -92,18 +92,22 @@ app.post("/login", async(req, res)=>{
 })
 
 app.post('/:institution/notif', auth, async (req, res) => {
-  // Confirmation notification to user and default notification receivers 
+    // Sends a confirmation notifcation to the default notification receivers as well as 
+    // other receivers based on the item's warehouseCode.
   
   try{
-    const defaultReceivers = new Map([
-      ['uwm', 3532],
-    ])
+    if(req?.access == process.env.RESTRICTED){throw new Error('Unauthorized')}
     const institution = req.params.institution;
     const details = {...req.body};
     await client.connect();
     const db = client.db('quaad');
+
+    const institutions = db.collection('institutions');
+    const findReceivers = await institutions.find({name: institution}).project({defaultNotifReceivers: 1, _id: 0}).toArray()
+    const defaultReceivers = findReceivers[0].defaultNotifReceivers;
+
     const coll = db.collection(`${institution}_notification_receivers`);
-    const match = await  coll.find({warehouseCode: defaultReceivers.get(institution) }).project({_id: 0, email: 1}).toArray()
+    const match = await  coll.find({warehouseCode: defaultReceivers}).project({_id: 0, email: 1}).toArray()
     const emails = [];
     match.forEach((m)=>{emails.push(m.email.toString())});
     const sendTos = [];
@@ -120,24 +124,29 @@ app.post('/:institution/notif', auth, async (req, res) => {
     })
   }
   catch(err){
-    res.status(500).json({message: 'Could not complete operation'})
+    if(err.message == 'Unauthorized'){res.status(401).json({message: 'Unauthorized'})}
+    else{res.status(500).json({message: 'Could not complete operation'})}
   }
 });
 
 app.post('/:institution/zero-stock-notif', auth, async (req, res) => {
+    // Sends a zero-stock notifcation to the default notification receivers as well as 
+    // other receivers based on the item's warehouseCode.
   
   try{
-    const defaultReceivers = new Map([
-      ['uwm', 3532],
-    ])
+    if(req?.access == process.env.RESTRICTED){throw new Error('Unauthorized')}
     const institution = req.params.institution;
     const details = {...req.body};
     await client.connect();
     const db = client.db('quaad');
+
+    const institutions = db.collection('institutions');
+    const findReceivers = await institutions.find({name: institution}).project({defaultNotifReceivers: 1, _id: 0}).toArray()
+    const defaultReceivers = findReceivers[0].defaultNotifReceivers;
+
     const coll = db.collection(`${institution}_notification_receivers`);
-    const defaultWare = defaultReceivers.get(institution);
-    const warehouseCodes = [defaultWare];
-    if(defaultWare != details.warehouseCode){
+    const warehouseCodes = [defaultReceivers];
+    if(defaultReceivers != details.warehouseCode){
       warehouseCodes.push(details.warehouseCode)
     }
     const match = await coll.find({warehouseCode: {$in: warehouseCodes}}).project({_id: 0, email: 1}).toArray()
@@ -149,18 +158,16 @@ app.post('/:institution/zero-stock-notif', auth, async (req, res) => {
     });
     sendTos.push(details.user);
     const from = `${institution}@quaad.net`;
-    // res.render('notif_template.ejs', {details}, (err, html) => {
-    //   notif(html, sendTos, from).then((notifRes)=>{
-    //     if(notifRes != 0){throw new Error()}
-    //     else{res.status(200).json({message: 'Success'})}
-    //   })
-    // })
-    console.log(`from: ${from}`)
-    console.log(`to: ${sendTos}`)
-    res.status(200).json({message: 'Success'})
+    res.render('notif_template.ejs', {details}, (err, html) => {
+      notif(html, sendTos, from).then((notifRes)=>{
+        if(notifRes != 0){throw new Error()}
+        else{res.status(200).json({message: 'Success'})}
+      })
+    })
   }
   catch(err){
-    res.status(500).json({message: 'Could not complete operation'})
+    if(err.message == 'Unauthorized'){res.status(401).json({message: 'Unauthorized'})}
+    else{res.status(500).json({message: 'Could not complete operation'})}
   }
 });
 
@@ -177,6 +184,7 @@ app.post("/print/labels/", auth, async(req, res)=>{
 
 })
 
+// WIP: Data from SQL Server for <Fiscal/> component
 app.get("/proxy/fiscal/:path/:arg", async (req, res)=>{
 
   fetch(`${process.env.FISCAL_API}/${req.params.path}/${req.params.arg}`)
@@ -198,12 +206,9 @@ app.post("/register", async (req, res) => {
 
     try {
       await client.connect();
-      
-      // Using Mongoose for validations only
-      // Note: Mongoose queries are not promises.
       await mongoose.connect(uri, {dbName: 'quaad'});  
 
-      // Query Institution then create user.
+      // Query Institutions then create user.
       const database = client.db('quaad');
       let coll = database.collection('institutions');
       const institutionInput = new RegExp(req.body.institution, 'i')
@@ -214,7 +219,7 @@ app.post("/register", async (req, res) => {
           const employeeIDinput = req.body.employeeID;
           coll = database.collection('authorized_accounts');
           // Note: Authorized users will already have an account in "authorized_accounts" collection in db.
-          const modEmployeeID = `_${employeeIDinput}` // note _
+          const modEmployeeID = `_${employeeIDinput}` 
           match = await coll.findOne({employeeID: modEmployeeID, institution: institutionInput});
           if(match !==null){
             const hash = createHmac('sha256', req.body.password)

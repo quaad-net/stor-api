@@ -40,7 +40,6 @@ router.post("/:institution/inventory/binLoc", auth, async (req, res)=>{
             else{ endQryAt = querySplit[1]}
             await client.connect();
             const coll = db.collection(`${req.params.institution}_inventory`);
-            console.log(coll)
             const result = await coll.find( { binLoc: { $gte: startQryAt, $lte: endQryAt }, ...(isActive ? { active: 'True' } : {}) } )
             .project({_id: 0}).sort({binLoc: 1, code: 1}).toArray();
             res.json(result);

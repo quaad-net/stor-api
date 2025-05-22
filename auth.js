@@ -18,5 +18,4 @@ async function auth(req, res, next){
         res.status(401).json({message: 'Could not authorize user!'})
     }
 }
-
 export default auth;

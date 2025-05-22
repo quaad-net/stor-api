@@ -11,6 +11,11 @@ const { createHmac } = await import('node:crypto');
 import auth from "./auth.js";
 
 const uri = process.env.ATLAS_URI;
+const hAlgo = process.env.H_ALGO;
+const hUpdate = process.env.H_UPDATE;
+const hDigest = process.env.H_DIGEST;
+const tAlgo = process.env.T_ALGO;
+
 const client = new MongoClient(uri);
 
 const PORT = process.env.PORT || 5050;
@@ -23,12 +28,10 @@ app.use(express.static('public'));
 
 app.set('view engine', 'ejs');
 
-// Test auth 
 app.post('/auth-endpoint', auth, (req, res)=>{
   res.status(200).json(req.user);
 })
 
-// Checks if user is trying to register with an account that already exists.
 app.post("/currentuser", async(req, res)=>{
   try{
     await client.connect();
@@ -56,9 +59,9 @@ app.post("/login", async(req, res)=>{
     const storedPass = match[0].password;
     const institution = match[0].institution;
 
-    const hash = createHmac('sha256', req.body.password)
-    .update('QuaCartoon1!')
-    .digest('hex')
+    const hash = createHmac(hAlgo, req.body.password)
+    .update(hUpdate)
+    .digest(hDigest)
 
     if(hash == storedPass){
       const secretKey = process.env.SECRET_KEY;
@@ -67,7 +70,7 @@ app.post("/login", async(req, res)=>{
           payload: req.body.email.toLowerCase(),
         }, 
         secretKey,
-        { expiresIn: "12h" , algorithm: 'HS256'}
+        { expiresIn: "12h" , algorithm: tAlgo}
       )
 
       const modMatch = {
@@ -92,8 +95,8 @@ app.post("/login", async(req, res)=>{
 })
 
 app.post('/:institution/notif', auth, async (req, res) => {
-    // Sends a confirmation notifcation to the default notification receivers as well as 
-    // other receivers based on the item's warehouseCode.
+    // Sends a confirmation notifcation to default receivers as well as 
+    // the user.
   
   try{
     if(req?.access == process.env.RESTRICTED){throw new Error('Unauthorized')}
@@ -129,47 +132,47 @@ app.post('/:institution/notif', auth, async (req, res) => {
   }
 });
 
-app.post('/:institution/zero-stock-notif', auth, async (req, res) => {
-    // Sends a zero-stock notifcation to the default notification receivers as well as 
-    // other receivers based on the item's warehouseCode.
+// app.post('/:institution/zero-stock-notif', auth, async (req, res) => {
+//     // Sends a zero-stock notifcation to default receivers,
+//     // other receivers based on the item's warehouseCode, and the user.
   
-  try{
-    if(req?.access == process.env.RESTRICTED){throw new Error('Unauthorized')}
-    const institution = req.params.institution;
-    const details = {...req.body};
-    await client.connect();
-    const db = client.db('quaad');
+//   try{
+//     if(req?.access == process.env.RESTRICTED){throw new Error('Unauthorized')}
+//     const institution = req.params.institution;
+//     const details = {...req.body};
+//     await client.connect();
+//     const db = client.db('quaad');
 
-    const institutions = db.collection('institutions');
-    const findReceivers = await institutions.find({name: institution}).project({defaultNotifReceivers: 1, _id: 0}).toArray()
-    const defaultReceivers = findReceivers[0].defaultNotifReceivers;
+//     const institutions = db.collection('institutions');
+//     const findReceivers = await institutions.find({name: institution}).project({defaultNotifReceivers: 1, _id: 0}).toArray()
+//     const defaultReceivers = findReceivers[0].defaultNotifReceivers;
 
-    const coll = db.collection(`${institution}_notification_receivers`);
-    const warehouseCodes = [defaultReceivers];
-    if(defaultReceivers != details.warehouseCode){
-      warehouseCodes.push(details.warehouseCode)
-    }
-    const match = await coll.find({warehouseCode: {$in: warehouseCodes}}).project({_id: 0, email: 1}).toArray()
-    const emails = [];
-    match.forEach((m)=>{emails.push(m.email.toString())});
-    const sendTos = [];
-    emails.forEach((email)=>{
-      if(email != details.user){sendTos.push(email)}
-    });
-    sendTos.push(details.user);
-    const from = `${institution}@quaad.net`;
-    res.render('notif_template.ejs', {details}, (err, html) => {
-      notif(html, sendTos, from).then((notifRes)=>{
-        if(notifRes != 0){throw new Error()}
-        else{res.status(200).json({message: 'Success'})}
-      })
-    })
-  }
-  catch(err){
-    if(err.message == 'Unauthorized'){res.status(401).json({message: 'Unauthorized'})}
-    else{res.status(500).json({message: 'Could not complete operation'})}
-  }
-});
+//     const coll = db.collection(`${institution}_notification_receivers`);
+//     const warehouseCodes = [defaultReceivers];
+//     if(defaultReceivers != details.warehouseCode){
+//       warehouseCodes.push(details.warehouseCode)
+//     }
+//     const match = await coll.find({warehouseCode: {$in: warehouseCodes}}).project({_id: 0, email: 1}).toArray()
+//     const emails = [];
+//     match.forEach((m)=>{emails.push(m.email.toString())});
+//     const sendTos = [];
+//     emails.forEach((email)=>{
+//       if(email != details.user){sendTos.push(email)}
+//     });
+//     sendTos.push(details.user);
+//     const from = `${institution}@quaad.net`;
+//     res.render('notif_template.ejs', {details}, (err, html) => {
+//       notif(html, sendTos, from).then((notifRes)=>{
+//         if(notifRes != 0){throw new Error()}
+//         else{res.status(200).json({message: 'Success'})}
+//       })
+//     })
+//   }
+//   catch(err){
+//     if(err.message == 'Unauthorized'){res.status(401).json({message: 'Unauthorized'})}
+//     else{res.status(500).json({message: 'Could not complete operation'})}
+//   }
+// });
 
 app.post("/print/labels/", auth, async(req, res)=>{
 
@@ -184,7 +187,6 @@ app.post("/print/labels/", auth, async(req, res)=>{
 
 })
 
-// WIP: Data from SQL Server for <Fiscal/> component
 app.get("/proxy/fiscal/:path/:arg", async (req, res)=>{
 
   fetch(`${process.env.FISCAL_API}/${req.params.path}/${req.params.arg}`)
@@ -201,7 +203,6 @@ app.get("/proxy/fiscal/:path/:arg", async (req, res)=>{
 
 })
 
-// Register new user.
 app.post("/register", async (req, res) => {
 
     try {
@@ -218,13 +219,12 @@ app.post("/register", async (req, res) => {
           const emailInput = req.body.email.toLowerCase();
           const employeeIDinput = req.body.employeeID;
           coll = database.collection('authorized_accounts');
-          // Note: Authorized users will already have an account in "authorized_accounts" collection in db.
           const modEmployeeID = `_${employeeIDinput}` 
           match = await coll.findOne({employeeID: modEmployeeID, institution: institutionInput});
           if(match !==null){
-            const hash = createHmac('sha256', req.body.password)
-            .update('QuaCartoon1!')
-            .digest('hex')
+            const hash = createHmac(hAlgo, req.body.password)
+            .update(hUpdate)
+            .digest(hDigest)
             
             const user = new User(
               {

@@ -5,7 +5,6 @@ import { ObjectId } from "mongodb";
 import auth from "../auth.js";
 import {client, db} from "../db/connection.js";
 
-
 const router = express.Router();
 
 router.get("/", auth, async(req, res)=>{
@@ -51,7 +50,8 @@ router.post("/:institution/inventory/binLoc", auth, async (req, res)=>{
                 let getAllRecords = false;
                 if(queryStr == 'ALL'){getAllRecords = true};
                 const regExpQueryStr = new RegExp(queryStr, 'i');
-                const result = await coll.find( {...(getAllRecords ? {} : {binLoc: regExpQueryStr}), ...(isActive ? { active: 'True' } : {})} )
+                const result = await coll.find( {...(getAllRecords ? {} : 
+                    {binLoc: regExpQueryStr}), ...(isActive ? { active: 'True' } : {})} )
                 .project({_id: 0}).sort({binLoc: 1, code: 1}).toArray();
                 res.json(result);
             }
@@ -170,8 +170,10 @@ router.post('/:institution/inventory_count', auth, async(req, res)=>{
         const reCode = new RegExp(countDetails.code, 'i');
         const reBinLoc = new RegExp(countDetails.binLoc,'i' );
         let warehouseCode;
+        // Allows comparing string/numeric vals in db.
         if(Number(countDetails.warehouseCode)){warehouseCode = Number(countDetails.warehouseCode)}
         else{warehouseCode = countDetails.warehouseCode}
+
         const query = { code: reCode, binLoc: reBinLoc, warehouseCode: warehouseCode };
         const result = await coll.replaceOne(query, countDetails, {upsert: true})
         if(result.acknowledged){

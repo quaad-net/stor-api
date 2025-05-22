@@ -118,6 +118,7 @@ export async function updatePartUsageAnalysis(){
           if(partArr.length == 3){
               const simpleCode = partArr[0] + '-' + partArr[1];
               let warehouseCode = partArr[2];
+              // Allows for string/number db comparisons.
               if(Number(warehouseCode)){warehouseCode = Number(warehouseCode)};
               const inventoryRec = await inventoryColl.find({code: simpleCode, warehouseCode: warehouseCode}).toArray();
               if(inventoryRec.length == 1){
@@ -125,7 +126,7 @@ export async function updatePartUsageAnalysis(){
                   min = partInventory.min
                   max = partInventory.max
                   const leadTimeRec = await leadTimeColl.find({part_code: simpleCode}).toArray()
-                  if(leadTimeRec == 1){
+                  if(leadTimeRec.length == 1){
                       leadTime = leadTimeRec[0].est_lead_time_days
                   }
               }
@@ -141,17 +142,17 @@ export async function updatePartUsageAnalysis(){
           const suggestedMin =  ((leadTime * avgDailyUsage));
           const analysis = {
               code: part,
-              leadTime: leadTime,
-              min: min,
-              max: max,
-              avgDailyUsage: avgDailyUsage,
-              total90DayUsage: total90DayUsage,
-              p1Usage: p1Usage,
-              p2Usage: p2Usage,
-              p3Usage: p3Usage,
+              leadTime,
+              min,
+              max,
+              avgDailyUsage,
+              total90DayUsage,
+              p1Usage,
+              p2Usage,
+              p3Usage,
               increaseSchema: ((leadTime * avgDailyUsage) > Number(min) + 1),
               decreaseSchema: (2 * (leadTime * avgDailyUsage) < Number(min)),
-              suggestedMin: suggestedMin,
+              suggestedMin,
               analysisDate: new Date().toLocaleDateString()
           }
           await analysisColl.insertOne(analysis)

@@ -7,7 +7,7 @@ export default async function notif(html, sendTo, from){
     const emailNotif = await client.sendEmail(
         {
             From: from,
-            To: "eukoh@quaad.net",  // replace "eukoh@quaad.net" with sendTo
+            To: sendTo,
             Subject: "Inventory Notification",
             HtmlBody: html.toString()
         }

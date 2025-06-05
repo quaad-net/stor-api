@@ -4,10 +4,15 @@ const serverToken = process.env.POSTMARK_TOKEN;
 let client = new postmark.ServerClient(serverToken);
 
 export default async function notif(html, sendTo, from){
+    let emailStr = ''
+    sendTo.forEach((to)=>{
+        emailStr += `${to},`
+    })
     const emailNotif = await client.sendEmail(
         {
-            From: from,
-            To: sendTo,
+            From: from, 
+            // replace with => To: emailStr,
+            To: 'eukoh@quaad.net',
             Subject: "Inventory Notification",
             HtmlBody: html.toString()
         }

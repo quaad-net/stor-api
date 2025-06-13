@@ -12,7 +12,7 @@ export default async function notif(html, sendTo, from){
         {
             From: from, 
             // replace with => To: emailStr,
-            To: 'eukoh@quaad.net',
+            To: 'eukoh@quaad.net', 
             Subject: "Inventory Notification",
             HtmlBody: html.toString()
         }

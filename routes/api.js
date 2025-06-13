@@ -39,7 +39,7 @@ router.post("/:institution/inventory/binLoc", auth, async (req, res)=>{
             else{ endQryAt = querySplit[1]}
             await client.connect();
             const coll = db.collection(`${req.params.institution}_inventory`);
-            const result = await coll.find( { binLoc: { $gte: startQryAt, $lte: endQryAt }, ...(isActive ? { active: 'True' } : {}) } )
+            const result = await coll.find( { binLoc: { $gte: startQryAt, $lte: endQryAt }, ...(isActive ? { active: 'TRUE' } : {}) } )
             .project({_id: 0}).sort({binLoc: 1, code: 1}).toArray();
             res.json(result);
         }
@@ -49,15 +49,16 @@ router.post("/:institution/inventory/binLoc", auth, async (req, res)=>{
                 const coll = db.collection(`${req.params.institution}_inventory`);
                 let getAllRecords = false;
                 if(queryStr == 'ALL'){getAllRecords = true};
-                const regExpQueryStr = new RegExp(queryStr, 'i');
+                let reQry;
+                if(isActive){reQry = new RegExp(queryStr.toString().replace('&ACTIVE', '').trim(), 'i')}
+                else{reQry = new RegExp(queryStr.toString().trim(), 'i')}
                 const result = await coll.find( {...(getAllRecords ? {} : 
-                    {binLoc: regExpQueryStr}), ...(isActive ? { active: 'True' } : {})} )
+                    {binLoc: reQry, ...(isActive ? { active: 'TRUE' } : {})})} )
                 .project({_id: 0}).sort({binLoc: 1, code: 1}).toArray();
                 res.json(result);
             }
             else{throw new Error('Invalid query format')}
         }
-
     }
     catch(err){
         if(err.message == 'Invalid query format'){

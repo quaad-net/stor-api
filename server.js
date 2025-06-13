@@ -177,11 +177,13 @@ app.post('/:institution/zero-stock-notif', auth, async (req, res) => {
 app.post("/print/labels/", auth, async(req, res)=>{
 
   try{
-    res.render('labels.ejs', {
-      records: req.body
+    const size = req.body[1];
+    res.render( size == '11pt' ? 'labels.ejs' : 'labelsX2.ejs', {
+      records: req.body[0],
     })
   }
   catch(err){
+    console.log(err)
     res.status(500).json({message: 'Failed!'})
   }
 

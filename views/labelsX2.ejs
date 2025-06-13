@@ -12,7 +12,7 @@
             .label-xl6322727{
                 padding-left:1px; 
                 color:black;
-                font-size: 11pt;
+                font-size: 32pt;
                 font-weight:400;
                 font-style:normal;
                 text-decoration:none;
@@ -20,17 +20,21 @@
             }
 
             td{
-                height: 72pt;
+                height: 144pt;
                 width: 100%;
             }
 
             .label-labeldata{
                 display: flex;
                 flex-direction: row;
-                min-height: 72pt;
-                max-height: 72pt;
+                min-height: 144pt;
+                max-height: 144pt;
                 width: 100%;
                 padding: 3px;
+            }
+
+            .label-labeldata div{
+                line-height: 100%;
             }
 
             .label-qr-container{
@@ -45,6 +49,7 @@
             #label-description{
                 width: 268pt;
                 padding-right: 5px;
+                word-break: break-all;
             }
 
             #label-bin-location, #label-min-max{
@@ -73,6 +78,7 @@
                                 <div id="label-description"><%=record.description%></div>
                                 <div class="label-last-line">
                                     <div id="label-bin-location"><%=record.binLoc%>&nbsp;&nbsp;</div> 
+                                    <br/>
                                     <div id="label-min-max">
                                         <span id="label-min"><%=record.min%></span>&nbsp;/
                                         <span id="label-max"><%=record.max%></span>

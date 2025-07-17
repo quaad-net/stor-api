@@ -16,6 +16,11 @@ export async function deletePartUsageRecords(){
         filter: {}
       }, 
       {
+        namespace: "quaad.uwm_part_usage_122_28",
+        name: "deleteMany",
+        filter: {}
+      }, 
+      {
         namespace: "quaad.uwm_part_usage_122_90",
         name: "deleteMany",
         filter: {}
@@ -36,11 +41,11 @@ export async function deletePartUsageRecords(){
     console.log(`Deleted documents: ${clientDeleteRes.deletedCount}`);
   }
   catch(err){
-    client.close()
+    await client.close()
     console.log(err)
   }
   finally{
-    client.close()
+    await client.close()
   }
 }
 
@@ -51,27 +56,27 @@ export async function updatePartUsageAnalysis(){
 
         // Update leadTime
 
-        const leadColl = database.collection('uwm_high_lead_time_parts'); 
-        const highLeads = await leadColl.find({}).toArray();
+        const leadColl = database.collection('uwm_leadtime'); 
+        const partLTs = await leadColl.find({}).toArray();
         const mainColl = database.collection('uwm_inventory');
-        // Default leadTime: 14
-        await mainColl.updateMany({}, {$set: {leadTime: 14}});
+        // Default leadTime: 30
+        await mainColl.updateMany({}, {$set: {leadTime: 30}});
         
         // Update collection with actual lead times
         async function updateLeadTime(filter, updateDoc){
           const result = await mainColl.updateMany(filter, updateDoc);
         }
-        highLeads.forEach((lead)=>{
+        partLTs.forEach((lead)=>{
           const updateDoc = {
-            $set: {leadTime: lead.est_lead_time_days}
+            $set: {leadTime: lead.calcLT}
           }
-          updateLeadTime({code: lead.part_code}, updateDoc)
+          updateLeadTime({code: lead.PO_Item_Code}, updateDoc)
         })
 
         // Update Analsis 
 
         const inventoryColl = database.collection('uwm_inventory');
-        const leadTimeColl = database.collection('uwm_high_lead_time_parts');
+        const leadTimeColl = database.collection('uwm_leadtime');
         const usageColl = database.collection('uwm_part_usage');
         const analysisColl = database.collection('uwm_part_usage_analysis');
         const usageAnalysisMissed = database.collection('uwm_part_usage_analysis_missed');
@@ -91,7 +96,7 @@ export async function updatePartUsageAnalysis(){
           let p3Usage = 0; // -60 days < part usage date > -28 days
           let min = 0;
           let max = 0;
-          let leadTime = 14;
+          let leadTime = 30;
           let avgDailyUsage = 0;
           const occurances =  await usageColl.find({materialPartCode: part}).project({_id: 0, materialQuantity: 1}).toArray();
           occurances.forEach((o)=>{
@@ -125,9 +130,10 @@ export async function updatePartUsageAnalysis(){
                   const partInventory  = inventoryRec[0];
                   min = partInventory.min
                   max = partInventory.max
-                  const leadTimeRec = await leadTimeColl.find({part_code: simpleCode}).toArray()
+                  const leadTimeRec = await leadTimeColl.find({PO_Item_Code: simpleCode}).toArray()
                   if(leadTimeRec.length == 1){
-                      leadTime = leadTimeRec[0].est_lead_time_days
+                      // If the part's actual lead time is less than 30 days, leadtime will remain at 30;
+                      if(leadTimeRec[0].calcLT > leadTime){leadTime = leadTimeRec[0].calcLT}
                   }
               }
               else{
@@ -159,7 +165,7 @@ export async function updatePartUsageAnalysis(){
         }
     }
     catch(err){
-      client.close()
+      await client.close()
       console.log(err)
     }
     finally{
@@ -167,3 +173,102 @@ export async function updatePartUsageAnalysis(){
     }
 } 
 
+export async function updatePODateField(){
+  try{
+    const db = client.db('quaad');
+    const dateFieldAgg = 
+    [ 
+      {'$set':
+        {
+          'Order_Date': {
+            '$dateFromString': {
+              'dateString': '$Order_Date'
+            }
+          }
+        }
+      }
+    ];
+
+    let coll, aggRes, insertion;
+
+    coll =  db.collection('uwm_purchase_orders_122_28');
+    await coll.findOneAndDelete({Order_Date: ''})
+    aggRes = await coll.aggregate(dateFieldAgg).toArray();
+    await coll.deleteMany({});
+    insertion = await coll.insertMany(aggRes);
+    console.log(`Updated ${insertion.insertedCount} doc(s) @ uwm_purchase_orders_122_28`);
+  }
+  catch(err){
+    await client.close();
+    console.log(err)
+  }
+  finally{
+    await client.close();
+  }
+}
+
+export async function updateDateField(){
+  try{
+   await client.connect();
+   const db = client.db('quaad');
+
+    const dateFieldAgg = 
+    [ 
+      {'$set':
+        {
+          'materialPostDate': {
+            '$dateFromString': {
+              'dateString': '$materialPostDate'
+            }
+          }
+        }
+      }
+    ];
+    let coll, aggRes, collName, insertion;
+
+    collName = 'uwm_part_usage'
+    coll =  db.collection(collName);
+    aggRes = await coll.aggregate(dateFieldAgg).toArray();
+    await coll.deleteMany({});
+    insertion = await coll.insertMany(aggRes);
+    console.log(`Updated ${insertion.insertedCount} doc(s) @ ${collName}`);
+
+    collName = 'uwm_part_usage_122_28'
+    coll =  db.collection(collName);
+    aggRes = await coll.aggregate(dateFieldAgg).toArray();
+    await coll.deleteMany({});
+    insertion = await coll.insertMany(aggRes);
+    console.log(`Updated ${insertion.insertedCount} doc(s) @ ${collName}`);
+
+    collName = 'uwm_part_usage_122_90'
+    coll =  db.collection(collName);
+    aggRes = await coll.aggregate(dateFieldAgg).toArray();
+    await coll.deleteMany({});
+    insertion = await coll.insertMany(aggRes);
+    console.log(`Updated ${insertion.insertedCount} doc(s) @ ${collName}`);
+
+    collName = 'uwm_part_usage_91_59'
+    coll =  db.collection(collName);
+    aggRes = await coll.aggregate(dateFieldAgg).toArray();
+    await coll.deleteMany({});
+    insertion = await coll.insertMany(aggRes);
+    console.log(`Updated ${insertion.insertedCount} doc(s) @ ${collName}`);
+
+    collName = 'uwm_part_usage_60_28'
+    coll =  db.collection(collName);
+    aggRes = await coll.aggregate(dateFieldAgg).toArray();
+    await coll.deleteMany({});
+    insertion = await coll.insertMany(aggRes);
+    console.log(`Updated ${insertion.insertedCount} doc(s) @ ${collName}`);
+  
+    await client.close();
+  }
+  catch(err){
+    await client.close();
+    console.log(err)
+  }
+  finally{
+      await client.close();
+  }
+
+}

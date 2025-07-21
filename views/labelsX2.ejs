@@ -52,14 +52,6 @@
                 padding-right: 5px;
                 word-break: break-all;
             }
-
-            #label-bin-location, #label-min-max{
-                display: inline;
-            }
-
-            #label-min-max{
-                text-align: right;
-            }
         </style>
     </head>
     <body>
@@ -77,14 +69,7 @@
                             <span class="label-part-details">
                                 <div id="label-part-code"><%=record.code%></div>
                                 <div id="label-description"><%=record.description%></div>
-                                <div class="label-last-line">
-                                    <div id="label-bin-location"><%=record.binLoc%>&nbsp;&nbsp;</div> 
-                                    <br/>
-                                    <div id="label-min-max">
-                                        <span id="label-min"><%=record.min%></span>&nbsp;/
-                                        <span id="label-max"><%=record.max%></span>
-                                    </div>
-                                </div>
+                                <div id="label-bin-location"><%=record.binLoc%></div> 
                             </span>
                         </td>
                     </tr>

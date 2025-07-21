@@ -128,8 +128,11 @@ export async function updatePartUsageAnalysis(){
               const inventoryRec = await inventoryColl.find({code: simpleCode, warehouseCode: warehouseCode}).toArray();
               if(inventoryRec.length == 1){
                   const partInventory  = inventoryRec[0];
-                  min = partInventory.min
-                  max = partInventory.max
+                  min = partInventory.min;
+                  max = partInventory.max;
+                  const pCode = String(partInventory.code);
+                  if(pCode[pCode.length-1] == 'S' || pCode[pCode.length-1] == 'K'){continue} // If true, part is a supply item and will not be analyzed. 
+                  if(Number(max)==0){continue} // If true, part is a non-stock item and will not be analyzed.
                   const leadTimeRec = await leadTimeColl.find({PO_Item_Code: simpleCode}).toArray()
                   if(leadTimeRec.length == 1){
                       // If the part's actual lead time is less than 30 days, leadtime will remain at 30;

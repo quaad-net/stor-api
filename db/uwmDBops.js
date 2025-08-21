@@ -227,10 +227,11 @@ export async function updateDateField(){
         }
       }
     ];
-    let coll, aggRes, collName, insertion;
+    let coll, aggRes, collName, insertion, deleteNulls;
 
     collName = 'uwm_part_usage'
     coll =  db.collection(collName);
+    deleteNulls = await coll.deleteMany({materialPostDate: ''});
     aggRes = await coll.aggregate(dateFieldAgg).toArray();
     await coll.deleteMany({});
     insertion = await coll.insertMany(aggRes);
@@ -238,6 +239,7 @@ export async function updateDateField(){
 
     collName = 'uwm_part_usage_122_28'
     coll =  db.collection(collName);
+    deleteNulls = await coll.deleteMany({materialPostDate: ''});
     aggRes = await coll.aggregate(dateFieldAgg).toArray();
     await coll.deleteMany({});
     insertion = await coll.insertMany(aggRes);
@@ -245,6 +247,7 @@ export async function updateDateField(){
 
     collName = 'uwm_part_usage_122_90'
     coll =  db.collection(collName);
+    deleteNulls = await coll.deleteMany({materialPostDate: ''});
     aggRes = await coll.aggregate(dateFieldAgg).toArray();
     await coll.deleteMany({});
     insertion = await coll.insertMany(aggRes);
@@ -252,6 +255,7 @@ export async function updateDateField(){
 
     collName = 'uwm_part_usage_91_59'
     coll =  db.collection(collName);
+    deleteNulls = await coll.deleteMany({materialPostDate: ''});
     aggRes = await coll.aggregate(dateFieldAgg).toArray();
     await coll.deleteMany({});
     insertion = await coll.insertMany(aggRes);
@@ -259,6 +263,7 @@ export async function updateDateField(){
 
     collName = 'uwm_part_usage_60_28'
     coll =  db.collection(collName);
+    deleteNulls = await coll.deleteMany({materialPostDate: ''});
     aggRes = await coll.aggregate(dateFieldAgg).toArray();
     await coll.deleteMany({});
     insertion = await coll.insertMany(aggRes);

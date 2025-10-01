@@ -166,9 +166,9 @@ export async function updatePartUsageAnalysis(){
           }
           await analysisColl.insertOne(analysis)
         }
+      console.log('Analysis Complete.')
     }
     catch(err){
-      await client.close()
       console.log(err)
     }
     finally{

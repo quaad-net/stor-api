@@ -92,6 +92,54 @@ router.post("/:institution/inventory/descr", auth, async (req, res)=>{
 
 })
 
+router.post("/:institution/inventory/locQR", auth, async (req, res)=>{
+
+    // Note: :partcode param can contain multiple parts seperated by " ".
+
+    try{
+        await client.connect();
+        const db = client.db('quaad');
+        const coll = db.collection('uwm_inventory');
+
+        const modifiedRes = [];
+        const warehouseCode = req.body.query.split('/')[0];
+        const row = req.body.query.split('/')[1];
+        const regExWare = warehouseCode + '$'
+        const regExRow = '^' + row
+        const agg = 
+        [
+        {
+            '$addFields': {
+            'warehouseCode': {
+                '$toString': '$warehouseCode'
+            }
+            }
+        }, {
+            '$match': {
+            'warehouseCode': {
+                '$regex': `${regExWare}`
+            },
+            'binLoc': {
+                '$regex': `${regExRow}`,
+            }
+            }
+        }
+        ]
+
+        const aggRes =  coll.aggregate(agg)
+        for await(const doc of aggRes){
+            if(doc.code.toString().substring(0, 1) == doc.warehouseCode.toString().substring(0, 1)){ 
+                modifiedRes.push(doc)
+            }
+        }
+        return res.json(modifiedRes)
+    }
+    catch(err){
+        res.status(500).json({message:"Error fetching data"})
+    }
+
+})
+
 router.post("/:institution/inventory/partCode", auth, async (req, res)=>{
 
     // Note: :partcode param can contain multiple parts seperated by " ".

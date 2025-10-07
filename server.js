@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 import jwt from 'jsonwebtoken';
 const { createHmac } = await import('node:crypto');
 import auth from "./auth.js";
+import { getLocQRs } from "./db/uwmDBops.js";
 
 const uri = process.env.ATLAS_URI;
 const hAlgo = process.env.H_ALGO;
@@ -183,7 +184,35 @@ app.post("/print/labels/", auth, async(req, res)=>{
     })
   }
   catch(err){
-    console.log(err)
+    res.status(500).json({message: 'Failed!'})
+  }
+
+})
+
+app.get("/print/locLabels/", async(req, res)=>{
+
+  try{
+    const locations = [];
+    const warehouseCode = 32;
+    await getLocQRs(warehouseCode).then((res)=> {return res})
+    .then((res)=>{
+        const results = [];
+        const modResults = [];
+        res.forEach((r)=>results.push(JSON.parse(r)))
+        results.forEach((r)=>{
+            const [row, sect] = r.binLoc.split('-'); // section is optional.
+            modResults.push(row);
+        })
+        const distinctLocs = [...new Set(modResults)]
+        distinctLocs.forEach((loc)=>{
+            locations.push({qrData: `locQR/${warehouseCode}/${loc}`, description: loc})
+        })
+    })
+    res.render( 'locLabels.ejs', {
+      records: locations
+    })
+  }
+  catch(err){
     res.status(500).json({message: 'Failed!'})
   }
 

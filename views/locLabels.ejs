@@ -1,0 +1,76 @@
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Labels</title>
+        <style>
+            .label-table{
+                table-layout: fixed;
+                width: 268pt;
+            }
+
+            .label-xl6322727{
+                padding-left:1px; 
+                color:black;
+                font-size: 25pt; 
+                font-weight:bold; 
+                font-style:normal;
+                text-decoration:none;
+                font-family:"Aptos Narrow", sans-serif;
+            }
+
+            td{
+                height: 72pt;
+                width: 100%;
+            }
+
+            .label-labeldata{
+                display: flex;
+                flex-direction: row;
+                min-height: 72pt;
+                max-height: 72pt;
+                width: 100%;
+            }
+
+            .label-qr-container{
+                margin-top: 4px;
+            }
+            
+            .label-details{
+                text-align: left;
+                margin-left: 5px;
+            }
+
+            #label-qr-data{
+                display: none;
+            }
+
+            #label-qr-description{
+                width: 268pt;
+                padding-right: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        <table class="label-table">
+            <thead>
+            </thead>
+            <tbody>
+                <%records.forEach((record)=>{%>
+                    <tr>
+                        <td class="label-xl6322727 label-labeldata">
+                            <div class="label-qr-container" >
+                                <div class='qr'>
+                                </div>
+                            </div>
+                            <span class="label-details">
+                                <div id="label-qr-data"><%=record.qrData%></div>
+                                <div id="label-qr-description"><%=record.description%></div>
+                            </span>
+                        </td>
+                    </tr>
+                <%})%>
+            </tbody>
+        </table>
+    </body>
+</html>

@@ -49,6 +49,65 @@ export async function deletePartUsageRecords(){
   }
 }
 
+export async function getLocQRs(warehouseCode){
+  try{
+    await client.connect();
+    const db = client.db('quaad');
+    const coll = db.collection('uwm_inventory');
+
+    const results = [];
+    const regExWare = warehouseCode + '$'
+    const agg = 
+    [
+      {
+        '$addFields': {
+          'warehouseCode': {
+            '$toString': '$warehouseCode'
+          }
+        }
+      }, 
+      {
+        '$match': {
+          'warehouseCode': {
+            '$regex': `${regExWare}`
+          },
+          'binLoc': {
+            '$regex': /[0-9]*\-/,
+          }
+        }
+      }, 
+      {
+        '$group':{
+          '_id': '$binLoc',
+        }
+      },
+      {
+        '$project': {
+          'binLoc': '$_id',
+          '_id' : 0
+        }
+      },
+      {
+        '$sort':{
+          'binLoc': 1
+        }
+      }
+    ]
+
+    const aggRes = coll.aggregate(agg)
+    for await( const doc of aggRes){
+      results.push(JSON.stringify(doc))
+    }
+    return results
+  }
+  catch(err){
+    console.log(err);
+  }
+  finally{
+    await client.close()
+  }
+}
+
 export async function updatePartUsageAnalysis(){
     try{
         await client.connect();

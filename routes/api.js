@@ -94,36 +94,33 @@ router.post("/:institution/inventory/descr", auth, async (req, res)=>{
 
 router.post("/:institution/inventory/locQR", auth, async (req, res)=>{
 
-    // Note: :partcode param can contain multiple parts seperated by " ".
-
     try{
         await client.connect();
         const db = client.db('quaad');
         const coll = db.collection('uwm_inventory');
 
         const modifiedRes = [];
-        const warehouseCode = req.body.query.split('/')[0];
-        const row = req.body.query.split('/')[1];
+        const [warehouseCode, row] = req.body.query.split('/');
         const regExWare = warehouseCode + '$'
         const regExRow = '^' + row
         const agg = 
         [
-        {
-            '$addFields': {
-            'warehouseCode': {
-                '$toString': '$warehouseCode'
+            {
+                '$addFields': {
+                'warehouseCode': {
+                    '$toString': '$warehouseCode'
+                }
+                }
+            }, {
+                '$match': {
+                'warehouseCode': {
+                    '$regex': `${regExWare}`
+                },
+                'binLoc': {
+                    '$regex': `${regExRow}`,
+                }
+                }
             }
-            }
-        }, {
-            '$match': {
-            'warehouseCode': {
-                '$regex': `${regExWare}`
-            },
-            'binLoc': {
-                '$regex': `${regExRow}`,
-            }
-            }
-        }
         ]
 
         const aggRes =  coll.aggregate(agg)

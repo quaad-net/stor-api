@@ -72,7 +72,7 @@ export async function getLocQRs(warehouseCode){
             '$regex': `${regExWare}`
           },
           'binLoc': {
-            '$regex': /[0-9]*\-/,
+            '$regex': /.*\-/,  // or [0-9]*\- if using a numeric only system.
           }
         }
       }, 

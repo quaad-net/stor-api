@@ -179,14 +179,27 @@ app.post("/print/labels/", auth, async(req, res)=>{
 
   try{
     const size = req.body[1];
-    res.render( size == '11pt' ? 'labels.ejs' : 'labelsX2.ejs', {
-      records: req.body[0],
+    const sizeMap = new Map([
+      ['11pt', 'labels.ejs'],
+      ['32pt', 'labelsX2.ejs'], 
+      ['mono', 'monoDataLabels.ejs'],
+    ]);
+
+    let records;
+    if(sizeMap.get(size)=='monoDataLabels.ejs'){
+      records = [];
+      const dataSource = req.body[2];
+      req.body[0].map((r)=>{
+        records.push({qrData: r[dataSource], description: r[dataSource]})
+      })
+    }
+    res.render( sizeMap.get(size), {
+      records: records || req.body[0],
     })
   }
   catch(err){
     res.status(500).json({message: 'Failed!'})
   }
-
 })
 
 app.get("/print/locLabels/", async(req, res)=>{
@@ -200,7 +213,7 @@ app.get("/print/locLabels/", async(req, res)=>{
         const modResults = [];
         res.forEach((r)=>results.push(JSON.parse(r)))
         results.forEach((r)=>{
-            const [row, sect] = r.binLoc.split('-'); // section is optional.
+            const [row, sect] = r.binLoc.split('-'); // Section is not in use.
             modResults.push(row);
         })
         const distinctLocs = [...new Set(modResults)]
@@ -208,7 +221,7 @@ app.get("/print/locLabels/", async(req, res)=>{
             locations.push({qrData: `locQR/${warehouseCode}/${loc}`, description: loc})
         })
     })
-    res.render( 'locLabels.ejs', {
+    res.render( 'monoDataLabels.ejs', {
       records: locations
     })
   }

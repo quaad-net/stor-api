@@ -118,7 +118,12 @@ app.post('/:institution/notif', auth, async (req, res) => {
     emails.forEach((email)=>{
       if(email != details.user){sendTos.push(email)}
     });
-    sendTos.push(details.user);
+    
+    const genericUser = /@quaad.net/
+    if(!genericUser.test(details.user)){
+      sendTos.push(details.user)
+    }
+
     const from = `${institution}@quaad.net`;
     res.render('notif_template.ejs', {details}, (err, html) => {
       notif(html, sendTos, from).then((notifRes)=>{
@@ -160,7 +165,11 @@ app.post('/:institution/zero-stock-notif', auth, async (req, res) => {
     emails.forEach((email)=>{
       if(email != details.user){sendTos.push(email)}
     });
-    sendTos.push(details.user);
+    const genericUser = /@quaad.net/
+    if(!genericUser.test(details.user)){
+      sendTos.push(details.user)
+    }
+    
     const from = `${institution}@quaad.net`;
     res.render('notif_template.ejs', {details}, (err, html) => {
       notif(html, sendTos, from).then((notifRes)=>{

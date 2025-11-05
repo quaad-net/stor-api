@@ -190,10 +190,10 @@ app.post("/print/labels/", auth, async(req, res)=>{
     const size = req.body[1];
     const sizeMap = new Map([
       ['11pt', 'labels.ejs'],
+      ['16pt', 'labels-16pt.ejs'],
       ['32pt', 'labelsX2.ejs'], 
       ['mono', 'monoDataLabels.ejs'],
     ]);
-
     let records;
     if(sizeMap.get(size)=='monoDataLabels.ejs'){
       records = [];

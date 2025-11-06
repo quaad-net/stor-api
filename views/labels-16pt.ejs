@@ -63,12 +63,16 @@
                                 <div class='qr'>
                                 </div>
                                 <span style="position: absolute;"><%=record.min%>/<%=record.max%>&nbsp;&nbsp;
-                                    <span style="font-weight: lighter; text-align: right;">&nbsp;loc: <%=record.binLoc%></span>
+                                    <!--Alternate binLoc position-->
+                                    <!-- <span style="font-weight: lighter; text-align: right;">&nbsp;loc: <%=record.binLoc%></span>  --> 
                                 </span>
                             </div>
                             <span class="label-details">
                                 <div id="label-qr-data"><%=record.code%></div>
-                                <div id="label-qr-description"><span style="font-weight: bolder;"><%=record.code%></span>&nbsp;&nbsp;<%=record.description%></div>
+                                <div id="label-qr-description">
+                                    <span style="font-weight: bolder;"><%=record.code%></span>&nbsp;&nbsp;<%=record.description%>
+                                </div>
+                                <div style="font-weight: lighter; text-align: right; margin-right: 10px;">loc: <%=record.binLoc%></div>
                             </span>
                         </td>
                     </tr>

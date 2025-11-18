@@ -190,7 +190,7 @@ router.get('/:institution/inventory/usage_analysis/:partcode', async(req, res)=>
     }
     catch(err){
         if(err.message == 'Not found'){
-            res.status(404).json({message: 'Not found'})
+            res.status(404).json({message: err.message})
         }
         else{res.status(500).json({message: 'Could not fetch usage'})}
     }

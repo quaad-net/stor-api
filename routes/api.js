@@ -139,7 +139,7 @@ router.post("/:institution/inventory/locQR", auth, async (req, res)=>{
 
 router.post("/:institution/inventory/partCode", auth, async (req, res)=>{
 
-    // Note: :partcode param can contain multiple parts seperated by " ".
+    // Note: :partcode param can contain multiple parts seperated by a space.
 
     try{
         if(req.body.query == ""){throw new Error('Invalid query format')}
@@ -173,6 +173,26 @@ router.post("/:institution/inventory/partCode", auth, async (req, res)=>{
         else{res.status(500).json({message:"Error fetching data"})}
     }
 
+})
+
+router.post("/:institution/inventory/warehouseCode", auth, async (req, res)=>{
+
+    try{
+        if(req.body.query == ""){throw new Error('Invalid query format')}
+        let warehouseCode = req.body.query.toString().trim();
+        await client.connect();
+        const coll = db.collection(`${req.params.institution}_inventory`);
+        if(Number(warehouseCode)){warehouseCode = Number(warehouseCode)};
+        const result = await coll.find( { warehouseCode: warehouseCode })
+        .sort({binLoc: 1, code: 1}).toArray();
+        res.json(result);
+    }
+    catch(err){
+        if(err.message == 'Invalid query format'){
+            res.status(400).json({message: "Invalid syntax"})
+        }
+        else{res.status(500).json({message:"Error fetching data"})}
+    }
 })
 
 router.get('/:institution/inventory/usage_analysis/:partcode', async(req, res)=>{

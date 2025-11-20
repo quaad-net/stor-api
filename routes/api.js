@@ -175,7 +175,7 @@ router.post("/:institution/inventory/partCode", auth, async (req, res)=>{
 
 })
 
-router.post("/:institution/inventory/warehouseCode", auth, async (req, res)=>{
+router.post("/:institution/inventory/ware", auth, async (req, res)=>{
 
     try{
         if(req.body.query == ""){throw new Error('Invalid query format')}

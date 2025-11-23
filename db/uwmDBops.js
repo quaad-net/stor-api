@@ -49,6 +49,88 @@ export async function deletePartUsageRecords(){
   }
 }
 
+export async function getLeadTime(){
+
+    let leadResolvedCount = 0;
+
+    try{
+        await client.connect();
+        const today = new Date();
+        const database = client.db('quaad');
+        const POs = database.collection(`uwm_purchase_orders_daily_compare_state`); // Latest POs (all)
+        const currentPOs = database.collection(`uwm_purchase_orders_daily`); // Current unresolved POs
+        const leadTimes = database.collection(`uwm_leadtime`)
+        const poStates = POs.find({});
+
+        function calculateDays(endDate) {
+            let start = new Date()
+            let end = new Date(endDate);
+            let timeDifference = end - start;
+            let daysDifference = Math.ceil(timeDifference / (1000 * 3600 * 24));
+            return daysDifference;
+        }
+        for await (const state of poStates){
+            const findPrev = await currentPOs.find({Order_No: state.Order_No, PO_Item_Code: state.PO_Item_Code}).toArray();
+            // Inserts a new PO item if it doesn't exist.
+            if(findPrev.length == 0){
+                // Inserts unresolved POs into collection
+                if(state.Received != state.Ordered){
+                    await currentPOs.insertOne({...state})
+                }
+            } 
+            else{
+                let prevState = findPrev[0];
+                const newLT = Math.abs(calculateDays(prevState.Order_Date));
+                // If true, PO item is now resolved.
+                if(state.Received == prevState.Ordered){  
+                    // state.prop and prevState.prop are interchangeable here. Ex: if(state.Received == state.Ordered)... would
+                    // produce the same result. 
+                    const getPrevLeadTimes = await leadTimes.find({PO_Item_Code: state.PO_Item_Code}).toArray();
+                    let newLTs; //note the 's'
+                    let calcLT;
+                    let rec;
+                    // Should always resolve as true.
+                    if(getPrevLeadTimes.length != 0){ 
+                        rec = JSON.parse(getPrevLeadTimes[0].leadTimes);
+                        // Maintains a max of 3 previous leadtimes
+                        rec.push(newLT)
+                        if(rec.length == 4){
+                            rec.shift()
+                        }
+                        newLTs = rec;
+                        // Calculates avg lead time based on the most recent (max of 3) lead times.
+                        let totalDays = 0;
+                        rec.forEach((r)=>{
+                            totalDays += r
+                        })
+                        calcLT = totalDays / rec.length 
+                    }
+                    const {_id, ...newState} = {...state};
+                    await leadTimes.findOneAndReplace(
+                        {PO_Item_Code: state.PO_Item_Code}, 
+                        {...newState, leadTimes: newLTs != undefined ? JSON.stringify(newLTs) : JSON.stringify([newLT]), 
+                            calcLT: calcLT == undefined ? newLT : calcLT, lastResolvedDate: today
+                        }, 
+                        {upsert: true}
+                    )
+                    // Removes PO item that has now been resolved.
+                    await currentPOs.deleteMany({Order_No: state.Order_No, PO_Item_Code: state.PO_Item_Code})              
+                    leadResolvedCount += 1;
+                }
+            }
+        }
+        console.log(`leadResolvedCount: ${leadResolvedCount}`)    
+    }
+    catch(err){
+        client.close()
+        console.log(err)
+        console.log(`leadResolvedCount: ${leadResolvedCount}`)  
+    }
+    finally{
+        client.close()
+    }
+}
+
 export async function getLocQRs(warehouseCode){
   try{
     await client.connect();

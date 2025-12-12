@@ -190,6 +190,26 @@ export async function getLocQRs(warehouseCode){
   }
 }
 
+export async function removeObsoleteWares(){
+  try{
+    client.connect();
+    const db = client.db('quaad');
+    const warehouses = db.collection('uwm_warehouses');
+    const wCodes = await warehouses.find({}).toArray();
+    const codeArr = [];
+    wCodes.map((w)=>{codeArr.push(w.Code)});
+    const inventory = db.collection('uwm_inventory');
+    const deletedRes = await inventory.deleteMany({warehouseCode: {$not: {$in: codeArr}}});
+    console.log(`Deleted ${deletedRes.deletedCount} obsolete ware(s)`);
+  }
+  catch(err){
+    console.log(err)
+  }
+  finally{
+    await client.close()
+  }
+}
+
 export async function updatePartUsageAnalysis(){
     try{
         await client.connect();

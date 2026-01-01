@@ -232,19 +232,18 @@ router.post('/:institution/inventory_count', auth, async(req, res)=>{
             user: req.body.user,
             date: new Date(req.body.date)
         };
-        const reCode = new RegExp(countDetails.code, 'i');
-        const reBinLoc = new RegExp(countDetails.binLoc,'i' );
+
         let warehouseCode;
-        // Allows comparing string/numeric vals in db.
+        // Allows proper comparing of string/numeric vals in db.
         if(Number(countDetails.warehouseCode)){warehouseCode = Number(countDetails.warehouseCode)}
         else{warehouseCode = countDetails.warehouseCode}
-
-        const query = { code: reCode, binLoc: reBinLoc, warehouseCode: warehouseCode };
-        const result = await coll.replaceOne(query, countDetails, {upsert: true})
-        if(result.acknowledged){
-            res.status(201).json({message: 'Count posted'})
-        }
-        else throw new Error()
+        let reCode = '^' + req.body.code + '$';
+        let reBinLoc = '^' + req.body.binLoc + '$';
+        reCode = new RegExp(reCode, 'i');
+        reBinLoc = new RegExp(reBinLoc, 'i');
+        const query = {code: {$in: [reCode]}, binLoc: {$in: [reBinLoc]}, warehouseCode: warehouseCode};
+        const result = await coll.replaceOne(query, {...countDetails, warehouseCode: warehouseCode}, {upsert: true})
+        res.status(201).json({message: 'Count posted'})
     }
     catch(err){
         if(err.message == 'Unauthorized'){res.status(401).json({message: 'Unauthorized'})}

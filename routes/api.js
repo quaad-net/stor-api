@@ -242,12 +242,28 @@ router.post('/:institution/inventory_count', auth, async(req, res)=>{
         reCode = new RegExp(reCode, 'i');
         reBinLoc = new RegExp(reBinLoc, 'i');
         const query = {code: {$in: [reCode]}, binLoc: {$in: [reBinLoc]}, warehouseCode: warehouseCode};
-        const result = await coll.replaceOne(query, {...countDetails, warehouseCode: warehouseCode}, {upsert: true})
+        await coll.replaceOne(query, {...countDetails, warehouseCode: warehouseCode}, {upsert: true});
         res.status(201).json({message: 'Count posted'})
     }
     catch(err){
         if(err.message == 'Unauthorized'){res.status(401).json({message: 'Unauthorized'})}
         else{res.status(500).json({message: 'Unable to post count'})}
+    }
+})
+
+router.post("/:institution/inventory_count_records", auth, async (req, res)=>{
+    try{
+        console.log(req.access)
+        if(req?.access == process.env.RESTRICTED){throw new Error('Unauthorized')}
+        await client.connect();
+        const coll = db.collection(`${req.params.institution}_inventory_count`);
+        const result = await coll.find({})
+        .sort({warehouseCode: 1, binLoc: 1, code: 1}).toArray();
+        res.status(200).json(result);
+    }
+    catch(err){
+        if(err?.message == 'Unauthorized'){res.status(401).json({message: err.message})}
+        else{res.status(500).json({message:"Error fetching data"})}
     }
 })
 
